@@ -10,6 +10,58 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        .numerology-square {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            width: 300px;
+            height: 300px;
+            border: 2px solid #4a5568; /* Ciemnoszary */
+            border-radius: 0.5rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .square-cell {
+            border: 1px solid #cbd5e0; /* Średnioszary */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0.5rem;
+            position: relative;
+            min-height: 100px;
+            overflow: hidden; /* Zapobiega wychodzeniu tekstu */
+        }
+        .cell-number {
+            font-size: 1.1rem; /* Zmniejszono rozmiar czcionki */
+            font-weight: bold;
+            color: #a0aec0; /* Jasnoszary */
+        }
+        .cell-letters {
+            /* Domyślny rozmiar jest teraz ustawiany przez JS */
+            font-weight: 500;
+            color: #2d3748; /* Ciemniejszy szary */
+            word-break: break-word; /* Lepsze łamanie słów */
+            line-height: 1.4;
+            transition: font-size 0.2s ease-in-out; /* Płynne przejście */
+        }
+        /* Style dla tabeli podsumowania */
+        .summary-table {
+            width: 80%; /* Zmniejszona szerokość */
+            max-width: 400px; /* Maksymalna szerokość dla czytelności */
+            margin: 1rem auto 0 auto; /* Wyśrodkowanie tabeli */
+            border-collapse: collapse;
+            font-size: 0.9rem; /* Mniejsza czcionka w tabeli */
+        }
+        .summary-table th, .summary-table td {
+            border: 1px solid #d1d5db;
+            padding: 0.5rem; /* Zmniejszony padding */
+            text-align: center;
+        }
+        .summary-table th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -27,8 +79,194 @@
             <!-- Nagłówek -->
             <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-6">Kwadrat Magiczny</h1>
 
+            <!-- Sekcja wejściowa -->
+            <div class="flex flex-col sm:flex-row items-center gap-4 mb-6">
+                <label for="nameInput" class="text-lg font-medium whitespace-nowrap"></label>
+                <input type="text" id="nameInput" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="np. Jan Kowalski">
+            </div>
+
+            <!-- Przycisk Oblicz -->
+            <div class="text-center mb-8">
+                <button id="calculateBtn" class="bg-blue-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-transform transform hover:scale-105">
+                    Generuj Kwadraty
+                </button>
+            </div>
+
+            <!-- Obszar wyników -->
+            <div id="resultsArea" class="space-y-12">
+                <!-- Kwadraty numerologiczne będą dynamicznie wstawiane tutaj -->
+            </div>
+
         </div>
     </div>
 
+    <script>
+        // --- Definicje Danych ---
+        const letterToSoma = {
+            'A': 1, 'a': 1, 'Ą': 1, 'ą': 1, 'Ä': 1, 'ä': 1, 'J': 1, 'j': 1, 'S': 1, 's': 1, 'Ś': 1, 'ś': 1, 'ß': 1,
+            'B': 2, 'b': 2, 'K': 2, 'k': 2, 'T': 2, 't': 2,
+            'C': 3, 'c': 3, 'Ć': 3, 'ć': 3, 'L': 3, 'l': 3, 'Ł': 3, 'ł': 3, 'U': 3, 'u': 3, 'Ü': 3, 'ü': 3,
+            'D': 4, 'd': 4, 'M': 4, 'm': 4, 'V': 4, 'v': 4,
+            'E': 5, 'e': 5, 'Ę': 5, 'ę': 5, 'N': 5, 'n': 5, 'Ń': 5, 'ń': 5, 'Ñ': 5, 'ñ': 5, 'W': 5, 'w': 5,
+            'F': 6, 'f': 6, 'O': 6, 'o': 6, 'Ó': 6, 'ó': 6, 'Ö': 6, 'ö': 6, 'X': 6, 'x': 6,
+            'G': 7, 'g': 7, 'P': 7, 'p': 7, 'Y': 7, 'y': 7,
+            'H': 8, 'h': 8, 'Q': 8, 'q': 8, 'Z': 8, 'z': 8, 'Ż': 8, 'ż': 8, 'Ž': 8, 'ž': 8,
+            'I': 9, 'i': 9, 'R': 9, 'r': 9
+        };
+
+        const somaValueToCellNumber = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9 };
+
+        const calculateBtn = document.getElementById('calculateBtn');
+        const nameInput = document.getElementById('nameInput');
+        const resultsArea = document.getElementById('resultsArea');
+
+        calculateBtn.addEventListener('click', processInput);
+        nameInput.addEventListener('keyup', (event) => { if (event.key === 'Enter') processInput(); });
+
+        function processInput() {
+            resultsArea.innerHTML = '';
+            const inputStr = nameInput.value.trim();
+            if (!inputStr) {
+                resultsArea.innerHTML = `<p class="text-center text-red-500">Proszę wpisać tekst.</p>`;
+                return;
+            }
+            const words = inputStr.split(/\s+/).filter(word => word.length > 0);
+            if (words.length > 5) {
+                resultsArea.innerHTML = `<p class="text-center text-red-500 font-semibold">Zbyt wiele słów. Maksymalnie 5.</p>`;
+                return;
+            }
+            words.forEach(word => createNumerologySquare(word));
+        }
+
+        function createNumerologySquare(word) {
+            const squareContainer = document.createElement('div');
+            const wordLabel = document.createElement('h2');
+            wordLabel.className = 'text-2xl font-bold mb-4 text-center text-gray-800';
+            wordLabel.textContent = `Kwadrat dla: "${word}"`;
+            squareContainer.appendChild(wordLabel);
+
+            const squareGrid = document.createElement('div');
+            squareGrid.className = 'numerology-square';
+
+            const cells = {};
+            for (let i = 1; i <= 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'square-cell';
+                cell.innerHTML = `<span class="cell-number">${i}</span><div id="letters-cell-${word}-${i}" class="cell-letters"></div>`;
+                cells[i] = cell;
+            }
+
+            for (const char of word) {
+                const somaValue = letterToSoma[char];
+                if (somaValue) {
+                    const cellNumber = somaValueToCellNumber[somaValue];
+                    const letterContainer = cells[cellNumber].querySelector(`#letters-cell-${word}-${cellNumber}`);
+                    if (letterContainer) {
+                        if (letterContainer.textContent) letterContainer.textContent += ', ';
+                        letterContainer.textContent += char;
+                    }
+                }
+            }
+
+            for (let i = 1; i <= 9; i++) {
+                const letterContainer = cells[i].querySelector(`#letters-cell-${word}-${i}`);
+                if (letterContainer) {
+                    const textLength = letterContainer.textContent.length;
+                    let newSize = '1.1rem';
+                    if (textLength > 25) newSize = '0.7rem';
+                    else if (textLength > 18) newSize = '0.8rem';
+                    else if (textLength > 12) newSize = '0.9rem';
+                    else if (textLength > 6) newSize = '1.0rem';
+                    letterContainer.style.fontSize = newSize;
+                }
+            }
+
+            const visualOrder = [3, 6, 9, 2, 5, 8, 1, 4, 7];
+            visualOrder.forEach(cellNum => squareGrid.appendChild(cells[cellNum]));
+            squareContainer.appendChild(squareGrid);
+
+            // --- NOWA LOGIKA: Przycisk i kontener podsumowania ---
+            const summaryButtonContainer = document.createElement('div');
+            summaryButtonContainer.className = 'text-center mt-6';
+
+            const summaryButton = document.createElement('button');
+            summaryButton.textContent = 'Podsumowanie';
+            summaryButton.className = 'bg-gray-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-700 active:bg-gray-800 transition';
+            summaryButtonContainer.appendChild(summaryButton);
+
+            const summaryContainer = document.createElement('div');
+            summaryContainer.id = `summary-container-${word}`;
+            summaryContainer.className = 'hidden mt-4'; // Domyślnie ukryty
+
+            summaryButton.addEventListener('click', () => {
+                const isHidden = summaryContainer.classList.contains('hidden');
+                if (isHidden) {
+                    // Jeśli jest ukryty, generuj tabelę (jeśli jeszcze nie istnieje) i pokaż ją
+                    if (summaryContainer.innerHTML === '') {
+                        generateSummaryTable(word, summaryContainer);
+                    }
+                    summaryContainer.classList.remove('hidden');
+                    summaryButton.textContent = 'Ukryj podsumowanie';
+                } else {
+                    // Jeśli jest widoczny, ukryj go
+                    summaryContainer.classList.add('hidden');
+                    summaryButton.textContent = 'Podsumowanie';
+                }
+            });
+
+            squareContainer.appendChild(summaryButtonContainer);
+            squareContainer.appendChild(summaryContainer);
+            resultsArea.appendChild(squareContainer);
+        }
+
+        /**
+         * Generuje i wstawia tabelę podsumowania dla danego słowa.
+         * @param {string} word - Słowo do przetworzenia.
+         * @param {HTMLElement} container - Kontener, do którego zostanie wstawiona tabela.
+         */
+        function generateSummaryTable(word, container) {
+            const lettersBySoma = {};
+            for (let i = 1; i <= 9; i++) {
+                lettersBySoma[i] = [];
+            }
+
+            for (const char of word) {
+                const somaValue = letterToSoma[char];
+                if (somaValue) {
+                    lettersBySoma[somaValue].push(char);
+                }
+            }
+
+            const table = document.createElement('table');
+            table.className = 'summary-table';
+
+            const thead = table.createTHead();
+            const headerRow = thead.insertRow();
+            const headers = ['Liczba', 'Litery', 'Suma'];
+            headers.forEach(text => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                headerRow.appendChild(th);
+            });
+
+            const tbody = table.createTBody();
+            for (let i = 1; i <= 9; i++) {
+                const row = tbody.insertRow();
+                const letters = lettersBySoma[i];
+
+                const cellLiczba = row.insertCell();
+                cellLiczba.textContent = i;
+
+                const cellLitery = row.insertCell();
+                cellLitery.textContent = letters.join(', ') || '-';
+
+                const cellSuma = row.insertCell();
+                cellSuma.textContent = letters.length;
+            }
+
+            container.appendChild(table);
+        }
+
+    </script>
 </body>
 </html>
