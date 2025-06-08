@@ -33,8 +33,15 @@
 <body class="bg-gray-100 text-gray-800">
 
     <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-4xl">
+        <!-- Link powrotu do strony głównej -->
+        <div class="mb-4 text-center">
+            <a href="numerologia.html" class="text-blue-600 hover:text-blue-800 font-medium">
+                &larr; Powrót do strony głównej
+            </a>
+        </div>
+
         <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-            
+
             <!-- Nagłówek -->
             <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-6">Kałkulator Numerologiczny</h1>
 
@@ -43,7 +50,7 @@
                 <label for="nameInput" class="text-lg font-medium whitespace-nowrap"></label>
                 <input type="text" id="nameInput" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="np. Jan Dawid Kowalski">
             </div>
-            
+
             <!-- Przycisk Oblicz -->
             <div class="text-center mb-8">
                 <button id="calculateBtn" class="bg-blue-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-transform transform hover:scale-105">
@@ -152,7 +159,7 @@
                 th.textContent = headerText;
                 headerRow.appendChild(th);
             });
-            
+
             // Ciało tabeli
             const tbody = table.createTBody();
             for (const char of word) {
@@ -164,7 +171,7 @@
                     gematrikon = values.Gematrikon; nous = values.Nous; psyche = values.Psyche; soma = values.Soma;
                     totalGematrikon += gematrikon; totalNous += nous; totalPsyche += psyche; totalSoma += soma;
                 }
-                
+
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td class="px-4 py-3 border-b border-gray-200">${gematrikon}</td>
@@ -198,7 +205,7 @@
             const getReductionSteps = (num) => {
                 const steps = [];
                 if (specialNumbers[num]) return []; // Nie redukuj, jeśli początkowa suma jest specjalna
-                
+
                 let currentNum = num;
                 while (currentNum > 9) {
                     currentNum = sumDigits(currentNum);
