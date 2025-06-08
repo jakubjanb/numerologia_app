@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulator Gematrii</title>
+    <title>Kałkulator Numerologiczny</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -36,11 +36,11 @@
         <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
             
             <!-- Nagłówek -->
-            <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-6">Kalkulator Gematrii</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-6">Kałkulator Numerologiczny</h1>
 
             <!-- Sekcja wejściowa -->
             <div class="flex flex-col sm:flex-row items-center gap-4 mb-6">
-                <label for="nameInput" class="text-lg font-medium whitespace-nowrap">Wprowadź do 5 imion:</label>
+                <label for="nameInput" class="text-lg font-medium whitespace-nowrap"></label>
                 <input type="text" id="nameInput" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="np. Jan Dawid Kowalski">
             </div>
             
@@ -69,7 +69,7 @@
             '111': { colorClass: 'text-green-600' }, '222': { colorClass: 'text-green-600' }, '333': { colorClass: 'text-green-600' }, '444': { colorClass: 'text-green-600' }, '555': { colorClass: 'text-green-600' }, '777': { colorClass: 'text-green-600' }, '888': { colorClass: 'text-green-600' }, '999': { colorClass: 'text-green-600' },
             '1111': { colorClass: 'text-green-600' }, '2222': { colorClass: 'text-green-600' }, '3333': { colorClass: 'text-green-600' }, '4444': { colorClass: 'text-green-600' },
             // Liczby Doskonałe (fioletowy)
-            '6': { colorClass: 'text-purple-600' }, '28': { colorClass: 'text-purple-600' }, '496': { colorClass: 'text-purple-600' }, '8128': { colorClass: 'text-purple-600' },
+            '28': { colorClass: 'text-purple-600' }, '496': { colorClass: 'text-purple-600' }, '8128': { colorClass: 'text-purple-600' },
             // Liczby Fatalne (czerwony)
             '17': { colorClass: 'text-red-600' }, '15': { colorClass: 'text-red-600' }, '23': { colorClass: 'text-red-600' }, '217': { colorClass: 'text-red-600' },
             // Liczby Diabelskie (czerwony)
@@ -120,7 +120,7 @@
                 return;
             }
             words.forEach((word) => {
-                const label = `Kalkulacja dla: ${word}`;
+                const label = `Tabela wyliczeń G-NPS dla: ${word}`;
                 createTableForWord(word, label);
             });
         }
