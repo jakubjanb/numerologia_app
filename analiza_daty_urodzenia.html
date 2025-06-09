@@ -22,7 +22,14 @@
             max-width: 500px; /* Nieco większy dla lepszej czytelności */
             margin: 0 auto;
             opacity: 0;
+            -webkit-transform: scale(0.95);
+            -moz-transform: scale(0.95);
+            -ms-transform: scale(0.95);
+            -o-transform: scale(0.95);
             transform: scale(0.95);
+            -webkit-animation: fadeIn 0.8s ease-out forwards;
+            -moz-animation: fadeIn 0.8s ease-out forwards;
+            -o-animation: fadeIn 0.8s ease-out forwards;
             animation: fadeIn 0.8s ease-out forwards;
         }
         .birth-chart text {
@@ -47,9 +54,43 @@
              font-weight: 700;
              fill: #2d3748;
         }
-        /* Animacje SVG */
+        /* Animacje SVG - Enhanced for cross-browser compatibility */
+        @-webkit-keyframes fadeIn {
+            0% {
+                opacity: 0;
+                -webkit-transform: scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                -webkit-transform: scale(1);
+            }
+        }
+        @-moz-keyframes fadeIn {
+            0% {
+                opacity: 0;
+                -moz-transform: scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                -moz-transform: scale(1);
+            }
+        }
+        @-o-keyframes fadeIn {
+            0% {
+                opacity: 0;
+                -o-transform: scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                -o-transform: scale(1);
+            }
+        }
         @keyframes fadeIn {
-            to {
+            0% {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            100% {
                 opacity: 1;
                 transform: scale(1);
             }
@@ -57,12 +98,23 @@
         .draw-stroke {
             stroke-dasharray: 1500;
             stroke-dashoffset: 1500;
+            -webkit-animation: draw 2s ease-out forwards;
+            -moz-animation: draw 2s ease-out forwards;
+            -o-animation: draw 2s ease-out forwards;
             animation: draw 2s ease-out forwards;
         }
+        @-webkit-keyframes draw {
+            to { stroke-dashoffset: 0; }
+        }
+        @-moz-keyframes draw {
+            to { stroke-dashoffset: 0; }
+        }
+        @-o-keyframes draw {
+            to { stroke-dashoffset: 0; }
+        }
         @keyframes draw {
-            to {
-                stroke-dashoffset: 0;
-            }
+            0% { stroke-dashoffset: 1500; }
+            100% { stroke-dashoffset: 0; }
         }
         /* Ulepszone style tabeli */
         .cycles-table {
@@ -72,6 +124,9 @@
             border-collapse: collapse;
             font-size: 1rem;
             opacity: 0;
+            -webkit-animation: fadeIn 0.6s 0.3s ease-out forwards;
+            -moz-animation: fadeIn 0.6s 0.3s ease-out forwards;
+            -o-animation: fadeIn 0.6s 0.3s ease-out forwards;
             animation: fadeIn 0.6s 0.3s ease-out forwards;
         }
         .cycles-table th, .cycles-table td {
@@ -104,7 +159,8 @@
             <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-8">Analiza Daty Urodzenia</h1>
             <div class="max-w-sm mx-auto space-y-4 mb-6">
                 <label for="birthDateInput" class="block text-lg font-medium text-gray-700 text-center">Wprowadź swoją datę urodzenia:</label>
-                <input type="date" id="birthDateInput" class="w-full px-4 py-3 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-center text-lg shadow-sm">
+                <input type="date" id="birthDateInput" class="w-full px-4 py-3 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-center text-lg shadow-sm" 
+                       pattern="\d{4}-\d{2}-\d{2}" placeholder="YYYY-MM-DD" autocomplete="off">
             </div>
             <div class="text-center mb-8">
                 <button id="analyzeBtn" class="bg-indigo-600 text-white font-bold py-3 px-10 rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-all duration-300 transform hover:scale-105 shadow-md">
@@ -122,6 +178,58 @@
         const birthDateInput = document.getElementById('birthDateInput');
         const resultsArea = document.getElementById('resultsArea');
 
+        // Ensure date input works consistently across browsers
+        birthDateInput.addEventListener('input', function(e) {
+            // Validate the date format
+            const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+            if (this.value && !datePattern.test(this.value)) {
+                // If format is incorrect, show visual feedback but don't block input
+                this.classList.add('border-red-300');
+            } else {
+                this.classList.remove('border-red-300');
+            }
+        });
+
+        // Safari date input fallback
+        // Check if browser is Safari
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+        if (isSafari) {
+            // Add a helper text for Safari users
+            const helperText = document.createElement('p');
+            helperText.className = 'text-sm text-gray-600 text-center mt-1';
+            helperText.textContent = 'Format daty: RRRR-MM-DD (np. 1990-01-15)';
+            birthDateInput.parentNode.appendChild(helperText);
+
+            // Add keydown event to help with formatting
+            birthDateInput.addEventListener('keydown', function(e) {
+                // Allow: backspace, delete, tab, escape, enter
+                if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+                    // Allow: Ctrl+A, Ctrl+C, Ctrl+V
+                    (e.keyCode === 65 && e.ctrlKey === true) ||
+                    (e.keyCode === 67 && e.ctrlKey === true) ||
+                    (e.keyCode === 86 && e.ctrlKey === true) ||
+                    // Allow: home, end, left, right
+                    (e.keyCode >= 35 && e.keyCode <= 39)) {
+                    return;
+                }
+
+                // If not a number or hyphen, prevent the keypress
+                if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && 
+                    (e.keyCode < 96 || e.keyCode > 105) && 
+                    e.keyCode !== 189 && e.keyCode !== 173) {
+                    e.preventDefault();
+                }
+
+                // Auto-add hyphens after YYYY and MM
+                const val = this.value;
+                if ((val.length === 4 || val.length === 7) && 
+                    e.keyCode >= 48 && e.keyCode <= 57) {
+                    this.value = val + '-';
+                }
+            });
+        }
+
         // --- GŁÓWNA LOGIKA ---
 
         function reduceNumber(num) {
@@ -135,8 +243,10 @@
             return { allSteps: allSteps, final: currentNum };
         }
 
-        analyzeBtn.addEventListener('click', () => {
-            const birthDate = birthDateInput.value;
+        // Improved event handling for better cross-browser compatibility
+        analyzeBtn.addEventListener('click', function() {
+            // Get the value and trim it to handle any potential whitespace issues
+            const birthDate = birthDateInput.value.trim();
             resultsArea.innerHTML = '';
             if (!birthDate) {
                 resultsArea.innerHTML = `<p class="text-center text-red-500 font-semibold">Proszę wybrać datę urodzenia.</p>`;
@@ -146,7 +256,38 @@
         });
 
         function displayAnalysis(birthDate) {
-            const [year, month, day] = birthDate.split('-').map(Number);
+            // More robust date parsing for cross-browser compatibility
+            let year, month, day;
+
+            try {
+                // First attempt: standard split method
+                const dateParts = birthDate.split('-');
+                if (dateParts.length === 3) {
+                    year = parseInt(dateParts[0], 10);
+                    month = parseInt(dateParts[1], 10);
+                    day = parseInt(dateParts[2], 10);
+                } else {
+                    // Fallback for Safari and other browsers that might format dates differently
+                    const dateObj = new Date(birthDate);
+                    if (!isNaN(dateObj.getTime())) {
+                        year = dateObj.getFullYear();
+                        month = dateObj.getMonth() + 1; // getMonth() is 0-indexed
+                        day = dateObj.getDate();
+                    } else {
+                        throw new Error("Invalid date format");
+                    }
+                }
+
+                // Validate the parsed values
+                if (isNaN(year) || isNaN(month) || isNaN(day) || 
+                    year < 1 || month < 1 || month > 12 || day < 1 || day > 31) {
+                    throw new Error("Invalid date components");
+                }
+            } catch (error) {
+                resultsArea.innerHTML = `<p class="text-center text-red-500 font-semibold">Nieprawidłowy format daty. Proszę spróbować ponownie.</p>`;
+                return;
+            }
+
             const dayCalc = reduceNumber(day);
             const monthCalc = reduceNumber(month);
             const yearCalc = reduceNumber(year);
@@ -209,9 +350,9 @@
                     <svg class="birth-chart" viewBox="0 0 500 500">
                         <circle cx="${cx}" cy="${cy}" r="${r + 10}" fill="#f7fafc"/>
                         <circle class="draw-stroke" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#cbd5e0" stroke-width="1.5"/>
-                        <polygon class="draw-stroke" style="animation-delay: 0.5s;" points="${topPoint} ${leftPoint} ${rightPoint}" fill="none" stroke="#a0aec0" stroke-width="2"/>
+                        <polygon class="draw-stroke" style="-webkit-animation-delay: 0.5s; -moz-animation-delay: 0.5s; -o-animation-delay: 0.5s; animation-delay: 0.5s;" points="${topPoint} ${leftPoint} ${rightPoint}" fill="none" stroke="#a0aec0" stroke-width="2"/>
 
-                        <g style="opacity:0; animation: fadeIn 1s 1s ease-out forwards;">
+                        <g class="chart-content" style="opacity:0; -webkit-animation: fadeIn 1s 1s ease-out forwards; -moz-animation: fadeIn 1s 1s ease-out forwards; -o-animation: fadeIn 1s 1s ease-out forwards; animation: fadeIn 1s 1s ease-out forwards;">
                             <text x="180" y="203" class="chart-label" transform="rotate(-60 180,203)">DZIEŃ</text>
                             <text x="325" y="210" class="chart-label" transform="rotate(60 325,210)">MIESIĄC</text>
                             <text x="250" y="345" class="chart-label">ROK</text>
@@ -228,6 +369,10 @@
         function generateCyclesButton(data) {
             const buttonContainer = document.createElement('div');
             buttonContainer.className = 'text-center -mt-2 mb-4 opacity-0';
+            // Add vendor prefixes for better cross-browser compatibility
+            buttonContainer.style.webkitAnimation = 'fadeIn 1s 1.5s ease-out forwards';
+            buttonContainer.style.mozAnimation = 'fadeIn 1s 1.5s ease-out forwards';
+            buttonContainer.style.oAnimation = 'fadeIn 1s 1.5s ease-out forwards';
             buttonContainer.style.animation = 'fadeIn 1s 1.5s ease-out forwards';
 
             const button = document.createElement('button');
