@@ -181,6 +181,9 @@
                 }
             }
 
+            // Color cells based on letter presence in rows, columns, and diagonals
+            colorCellsWithLetters(cells, word);
+
             const visualOrder = [3, 6, 9, 2, 5, 8, 1, 4, 7];
             visualOrder.forEach(cellNum => squareGrid.appendChild(cells[cellNum]));
             squareContainer.appendChild(squareGrid);
@@ -217,6 +220,67 @@
             squareContainer.appendChild(summaryButtonContainer);
             squareContainer.appendChild(summaryContainer);
             resultsArea.appendChild(squareContainer);
+        }
+
+        /**
+         * Checks if all cells in rows, columns, and diagonals have letters and colors them accordingly.
+         * @param {Object} cells - Object containing all cell elements.
+         * @param {string} word - The word being processed.
+         */
+        function colorCellsWithLetters(cells, word) {
+            // Check which cells have letters
+            const cellsWithLetters = {};
+            for (let i = 1; i <= 9; i++) {
+                const letterContainer = cells[i].querySelector(`#letters-cell-${word}-${i}`);
+                cellsWithLetters[i] = letterContainer && letterContainer.textContent.trim().length > 0;
+            }
+
+            // Define rows, columns, and diagonals
+            const rows = [
+                [7, 8, 9], // Top row (visual bottom)
+                [4, 5, 6], // Middle row
+                [1, 2, 3]  // Bottom row (visual top)
+            ];
+
+            const columns = [
+                [7, 4, 1], // Left column
+                [8, 5, 2], // Middle column
+                [9, 6, 3]  // Right column
+            ];
+
+            const diagonals = [
+                [7, 5, 3], // Main diagonal (bottom-left to top-right)
+                [1, 5, 9]  // Other diagonal (top-left to bottom-right)
+            ];
+
+            // Cells to color (avoid duplicates)
+            const cellsToColor = new Set();
+
+            // Check rows
+            rows.forEach(row => {
+                if (row.every(cellNum => cellsWithLetters[cellNum])) {
+                    row.forEach(cellNum => cellsToColor.add(cellNum));
+                }
+            });
+
+            // Check columns
+            columns.forEach(column => {
+                if (column.every(cellNum => cellsWithLetters[cellNum])) {
+                    column.forEach(cellNum => cellsToColor.add(cellNum));
+                }
+            });
+
+            // Check diagonals
+            diagonals.forEach(diagonal => {
+                if (diagonal.every(cellNum => cellsWithLetters[cellNum])) {
+                    diagonal.forEach(cellNum => cellsToColor.add(cellNum));
+                }
+            });
+
+            // Apply color to cells
+            cellsToColor.forEach(cellNum => {
+                cells[cellNum].style.backgroundColor = 'rgba(152, 251, 152, 0.3)'; // Pale green with transparency
+            });
         }
 
         /**
