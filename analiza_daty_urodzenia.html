@@ -495,11 +495,24 @@
             }
         });
 
+        function sumAllDigits(dateString) {
+            // Remove any non-digit characters and sum all individual digits
+            const allDigits = dateString.replace(/\D/g, '').split('');
+            const sum = allDigits.reduce((acc, digit) => acc + parseInt(digit, 10), 0);
+            const reducedSum = reduceNumber(sum);
+            return { sum, reducedSum };
+        }
+
         function displayAnalysis(birthDate) {
             const [year, month, day] = birthDate.split('-').map(Number);
             const dayCalc = reduceNumber(day);
             const monthCalc = reduceNumber(month);
             const yearCalc = reduceNumber(year);
+
+            // Calculate the sum of all individual digits from the date
+            const dateString = `${day}.${month}.${year}`;
+            const digitSum = sumAllDigits(dateString);
+
             const lifePathSum = dayCalc.final + monthCalc.final + yearCalc.final;
             const lifePathCalc = reduceNumber(lifePathSum);
 
@@ -507,7 +520,8 @@
                 day: dayCalc,
                 month: monthCalc,
                 year: yearCalc,
-                lifePath: lifePathCalc
+                lifePath: lifePathCalc,
+                digitSum: digitSum
             };
 
             const chartHTML = generateChartSVG(analysisData);
@@ -544,15 +558,13 @@
             };
 
             // --- Logika centrująca ---
-            const lifePathSteps = data.lifePath.allSteps;
+            // Use digitSum instead of lifePath for the center
+            const digitSumValue = data.digitSum.sum;
+            const digitSumReducedValue = data.digitSum.reducedSum.final;
             const lifePathDy = 35;
             const lifePathCenterY = 250;
-            let lifePathStartY;
-            if (lifePathSteps.length > 1) {
-                lifePathStartY = lifePathCenterY - 1.5 * lifePathDy;
-            } else {
-                lifePathStartY = lifePathCenterY - lifePathDy;
-            }
+            // Center position for the digit sum and its reduced form
+            const digitSumStartY = lifePathCenterY - lifePathDy;
 
             return `
                 <div class="birth-chart-container">
@@ -569,7 +581,8 @@
                             ${createTextBlock(data.day.allSteps, 110, 160, 28, 'chart-final-number')}
                             ${createTextBlock(data.month.allSteps, 395, 160, 28, 'chart-final-number')}
                             ${createTextBlock(data.year.allSteps, 250, 350, 28, 'chart-final-number')}
-                            ${createTextBlock(lifePathSteps, 250, lifePathStartY, lifePathDy, 'chart-final-number')}
+                            <text x="250" y="${digitSumStartY}" class="chart-final-number">${digitSumValue}</text>
+                            <text x="250" y="${digitSumStartY + lifePathDy}" class="chart-final-number">${digitSumReducedValue}</text>
                         </g>
                     </svg>
                 </div>`;
@@ -605,7 +618,7 @@
                 { label: 'Liczba miesiąca', number: data.month.final, cycle: '1-27' },
                 { label: 'Liczba dnia', number: data.day.final, cycle: '28-54' },
                 { label: 'Liczba roku', number: data.year.final, cycle: '55-81' },
-                { label: 'Liczba daty', number: data.lifePath.final, cycle: 'po 81' }
+                { label: 'Liczba daty', number: data.digitSum.reducedSum.final, cycle: 'po 81' }
             ];
             const table = document.createElement('table');
             table.className = 'cycles-table';
