@@ -9,6 +9,7 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Lżejszy szary tła */
         }
         .numerology-square {
             display: grid;
@@ -16,13 +17,15 @@
             grid-template-rows: repeat(3, 1fr);
             width: 300px;
             height: 300px;
-            border: 2px solid #4a5568; /* Ciemnoszary */
+            border: 2px solid #4b5563; /* Ciemnoszary */
             border-radius: 0.5rem;
             margin-left: auto;
             margin-right: auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         .square-cell {
-            border: 1px solid #cbd5e0; /* Średnioszary */
+            border: 1px solid #e5e7eb; /* Jaśniejszy szary */
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -31,36 +34,19 @@
             position: relative;
             min-height: 100px;
             overflow: hidden; /* Zapobiega wychodzeniu tekstu */
+            transition: background-color 0.3s ease;
         }
         .cell-number {
-            font-size: 1.1rem; /* Zmniejszono rozmiar czcionki */
+            font-size: 1.1rem;
             font-weight: bold;
-            color: #a0aec0; /* Jasnoszary */
+            color: #9ca3af; /* Jasnoszary */
         }
         .cell-letters {
-            /* Domyślny rozmiar jest teraz ustawiany przez JS */
             font-weight: 500;
-            color: #2d3748; /* Ciemniejszy szary */
-            word-break: break-word; /* Lepsze łamanie słów */
-            line-height: 1.4;
-            transition: font-size 0.2s ease-in-out; /* Płynne przejście */
-        }
-        /* Style dla tabeli podsumowania */
-        .summary-table {
-            width: 80%; /* Zmniejszona szerokość */
-            max-width: 400px; /* Maksymalna szerokość dla czytelności */
-            margin: 1rem auto 0 auto; /* Wyśrodkowanie tabeli */
-            border-collapse: collapse;
-            font-size: 0.9rem; /* Mniejsza czcionka w tabeli */
-        }
-        .summary-table th, .summary-table td {
-            border: 1px solid #d1d5db;
-            padding: 0.5rem; /* Zmniejszony padding */
-            text-align: center;
-        }
-        .summary-table th {
-            background-color: #f3f4f6;
-            font-weight: 600;
+            color: #1f2937; /* Ciemniejszy szary */
+            word-break: break-word;
+            line-height: 1.3;
+            transition: font-size 0.2s ease-in-out;
         }
     </style>
 </head>
@@ -77,17 +63,18 @@
         <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
 
             <!-- Nagłówek -->
-            <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-6">Kwadrat Pitagorejski</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-2">Kwadrat Magiczny</h1>
+            <!-- <p class="text-center text-gray-500 mb-6">Wpisz imię, nazwisko lub dowolne słowo, aby wygenerować jego portret numerologiczny.</p> -->
 
             <!-- Sekcja wejściowa -->
-            <div class="flex flex-col sm:flex-row items-center gap-4 mb-6">
-                <label for="nameInput" class="text-lg font-medium whitespace-nowrap"></label>
-                <input type="text" id="nameInput" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="np. Jan Kowalski">
+            <div class="flex flex-col sm:flex-row items-center gap-4 mb-6 max-w-lg mx-auto">
+                <label for="nameInput" class="sr-only">Wpisz tekst</label>
+                <input type="text" id="nameInput" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="np. Anna Nowak">
             </div>
 
             <!-- Przycisk Oblicz -->
             <div class="text-center mb-8">
-                <button id="calculateBtn" class="bg-blue-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-transform transform hover:scale-105">
+                <button id="calculateBtn" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-transform transform hover:scale-105 shadow-md hover:shadow-lg">
                     Generuj Kwadraty
                 </button>
             </div>
@@ -98,10 +85,14 @@
             </div>
 
         </div>
+        <footer class="text-center text-gray-500 mt-8 text-sm">
+             Kalkulator numerologiczny
+        </footer>
     </div>
 
     <script>
         // --- Definicje Danych ---
+        // Mapowanie liter na ich wartości "soma" w numerologii.
         const letterToSoma = {
             'A': 1, 'a': 1, 'Ą': 1, 'ą': 1, 'Ä': 1, 'ä': 1, 'J': 1, 'j': 1, 'S': 1, 's': 1, 'Ś': 1, 'ś': 1, 'ß': 1,
             'B': 2, 'b': 2, 'K': 2, 'k': 2, 'T': 2, 't': 2,
@@ -114,32 +105,49 @@
             'I': 9, 'i': 9, 'R': 9, 'r': 9
         };
 
+        // Mapowanie wartości "soma" na konkretną komórkę w kwadracie (w tym przypadku 1-do-1).
         const somaValueToCellNumber = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9 };
 
+        // --- Elementy DOM ---
         const calculateBtn = document.getElementById('calculateBtn');
         const nameInput = document.getElementById('nameInput');
         const resultsArea = document.getElementById('resultsArea');
 
+        // --- Event Listeners ---
         calculateBtn.addEventListener('click', processInput);
         nameInput.addEventListener('keyup', (event) => { if (event.key === 'Enter') processInput(); });
 
+        /**
+         * Przetwarza dane wejściowe użytkownika, dzieli je na słowa i generuje kwadrat dla każdego słowa.
+         */
         function processInput() {
-            resultsArea.innerHTML = '';
+            resultsArea.innerHTML = ''; // Czyści poprzednie wyniki
             const inputStr = nameInput.value.trim();
+
+            // Walidacja wejścia
             if (!inputStr) {
-                resultsArea.innerHTML = `<p class="text-center text-red-500">Proszę wpisać tekst.</p>`;
+                resultsArea.innerHTML = `<p class="text-center text-red-500 font-medium">Proszę wpisać tekst.</p>`;
                 return;
             }
+
+            // Dzieli tekst na słowa, ignorując dodatkowe spacje
             const words = inputStr.split(/\s+/).filter(word => word.length > 0);
+
             if (words.length > 5) {
-                resultsArea.innerHTML = `<p class="text-center text-red-500 font-semibold">Zbyt wiele słów. Maksymalnie 5.</p>`;
+                resultsArea.innerHTML = `<p class="text-center text-red-500 font-semibold">Można przetworzyć maksymalnie 5 słów naraz.</p>`;
                 return;
             }
+
             words.forEach(word => createNumerologySquare(word));
         }
 
+        /**
+         * Tworzy i wyświetla kwadrat numerologiczny dla pojedynczego słowa.
+         * @param {string} word - Słowo do analizy.
+         */
         function createNumerologySquare(word) {
             const squareContainer = document.createElement('div');
+
             const wordLabel = document.createElement('h2');
             wordLabel.className = 'text-2xl font-bold mb-4 text-center text-gray-800';
             wordLabel.textContent = `Kwadrat dla: "${word}"`;
@@ -148,6 +156,7 @@
             const squareGrid = document.createElement('div');
             squareGrid.className = 'numerology-square';
 
+            // Tworzy pusty zestaw komórek
             const cells = {};
             for (let i = 1; i <= 9; i++) {
                 const cell = document.createElement('div');
@@ -156,9 +165,10 @@
                 cells[i] = cell;
             }
 
+            // Wypełnia komórki literami z danego słowa
             for (const char of word) {
                 const somaValue = letterToSoma[char];
-                if (somaValue) {
+                if (somaValue) { // Sprawdza, czy litera ma przypisaną wartość
                     const cellNumber = somaValueToCellNumber[somaValue];
                     const letterContainer = cells[cellNumber].querySelector(`#letters-cell-${word}-${cellNumber}`);
                     if (letterContainer) {
@@ -168,6 +178,7 @@
                 }
             }
 
+            // Dostosowuje rozmiar czcionki w komórkach w zależności od liczby liter
             for (let i = 1; i <= 9; i++) {
                 const letterContainer = cells[i].querySelector(`#letters-cell-${word}-${i}`);
                 if (letterContainer) {
@@ -181,156 +192,51 @@
                 }
             }
 
-            // Color cells based on letter presence in rows, columns, and diagonals
+            // Koloruje komórki, które tworzą pełne linie
             colorCellsWithLetters(cells, word);
 
-            const visualOrder = [3, 6, 9, 2, 5, 8, 1, 4, 7];
+            // [ZMIANA] Układa komórki w kwadracie w nowej kolejności wizualnej
+            const visualOrder = [4, 9, 2, 3, 5, 7, 8, 1, 6];
             visualOrder.forEach(cellNum => squareGrid.appendChild(cells[cellNum]));
             squareContainer.appendChild(squareGrid);
 
-            // --- NOWA LOGIKA: Przycisk i kontener podsumowania ---
-            const summaryButtonContainer = document.createElement('div');
-            summaryButtonContainer.className = 'text-center mt-6';
-
-            const summaryButton = document.createElement('button');
-            summaryButton.textContent = 'Podsumowanie';
-            summaryButton.className = 'bg-gray-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-700 active:bg-gray-800 transition';
-            summaryButtonContainer.appendChild(summaryButton);
-
-            const summaryContainer = document.createElement('div');
-            summaryContainer.id = `summary-container-${word}`;
-            summaryContainer.className = 'hidden mt-4'; // Domyślnie ukryty
-
-            summaryButton.addEventListener('click', () => {
-                const isHidden = summaryContainer.classList.contains('hidden');
-                if (isHidden) {
-                    // Jeśli jest ukryty, generuj tabelę (jeśli jeszcze nie istnieje) i pokaż ją
-                    if (summaryContainer.innerHTML === '') {
-                        generateSummaryTable(word, summaryContainer);
-                    }
-                    summaryContainer.classList.remove('hidden');
-                    summaryButton.textContent = 'Ukryj podsumowanie';
-                } else {
-                    // Jeśli jest widoczny, ukryj go
-                    summaryContainer.classList.add('hidden');
-                    summaryButton.textContent = 'Podsumowanie';
-                }
-            });
-
-            squareContainer.appendChild(summaryButtonContainer);
-            squareContainer.appendChild(summaryContainer);
             resultsArea.appendChild(squareContainer);
         }
 
         /**
-         * Checks if all cells in rows, columns, and diagonals have letters and colors them accordingly.
-         * @param {Object} cells - Object containing all cell elements.
-         * @param {string} word - The word being processed.
+         * Sprawdza, czy wiersze, kolumny i przekątne są w pełni zapełnione literami i koloruje je.
+         * @param {Object} cells - Obiekt zawierający elementy komórek.
+         * @param {string} word - Analizowane słowo (używane do tworzenia unikalnych ID).
          */
         function colorCellsWithLetters(cells, word) {
-            // Check which cells have letters
+            // Sprawdza, które komórki zawierają litery
             const cellsWithLetters = {};
             for (let i = 1; i <= 9; i++) {
                 const letterContainer = cells[i].querySelector(`#letters-cell-${word}-${i}`);
                 cellsWithLetters[i] = letterContainer && letterContainer.textContent.trim().length > 0;
             }
 
-            // Define rows, columns, and diagonals
-            const rows = [
-                [7, 8, 9], // Top row (visual bottom)
-                [4, 5, 6], // Middle row
-                [1, 2, 3]  // Bottom row (visual top)
+            // [ZMIANA] Definicje linii (wiersze, kolumny, przekątne) dla nowego układu
+            const lines = [
+                [4, 9, 2], [3, 5, 7], [8, 1, 6], // Wiersze
+                [4, 3, 8], [9, 5, 1], [2, 7, 6], // Kolumny
+                [4, 5, 6], [8, 5, 2]             // Przekątne
             ];
 
-            const columns = [
-                [7, 4, 1], // Left column
-                [8, 5, 2], // Middle column
-                [9, 6, 3]  // Right column
-            ];
-
-            const diagonals = [
-                [7, 5, 3], // Main diagonal (bottom-left to top-right)
-                [1, 5, 9]  // Other diagonal (top-left to bottom-right)
-            ];
-
-            // Cells to color (avoid duplicates)
             const cellsToColor = new Set();
 
-            // Check rows
-            rows.forEach(row => {
-                if (row.every(cellNum => cellsWithLetters[cellNum])) {
-                    row.forEach(cellNum => cellsToColor.add(cellNum));
+            // Sprawdza każdą linię
+            lines.forEach(line => {
+                if (line.every(cellNum => cellsWithLetters[cellNum])) {
+                    line.forEach(cellNum => cellsToColor.add(cellNum));
                 }
             });
 
-            // Check columns
-            columns.forEach(column => {
-                if (column.every(cellNum => cellsWithLetters[cellNum])) {
-                    column.forEach(cellNum => cellsToColor.add(cellNum));
-                }
-            });
-
-            // Check diagonals
-            diagonals.forEach(diagonal => {
-                if (diagonal.every(cellNum => cellsWithLetters[cellNum])) {
-                    diagonal.forEach(cellNum => cellsToColor.add(cellNum));
-                }
-            });
-
-            // Apply color to cells
+            // Aplikuje styl do zakolorowania
             cellsToColor.forEach(cellNum => {
-                cells[cellNum].style.backgroundColor = 'rgba(152, 251, 152, 0.3)'; // Pale green with transparency
+                cells[cellNum].style.backgroundColor = 'rgba(134, 239, 172, 0.4)'; // Jasny zielony
             });
         }
-
-        /**
-         * Generuje i wstawia tabelę podsumowania dla danego słowa.
-         * @param {string} word - Słowo do przetworzenia.
-         * @param {HTMLElement} container - Kontener, do którego zostanie wstawiona tabela.
-         */
-        function generateSummaryTable(word, container) {
-            const lettersBySoma = {};
-            for (let i = 1; i <= 9; i++) {
-                lettersBySoma[i] = [];
-            }
-
-            for (const char of word) {
-                const somaValue = letterToSoma[char];
-                if (somaValue) {
-                    lettersBySoma[somaValue].push(char);
-                }
-            }
-
-            const table = document.createElement('table');
-            table.className = 'summary-table';
-
-            const thead = table.createTHead();
-            const headerRow = thead.insertRow();
-            const headers = ['Liczba', 'Litery', 'Suma'];
-            headers.forEach(text => {
-                const th = document.createElement('th');
-                th.textContent = text;
-                headerRow.appendChild(th);
-            });
-
-            const tbody = table.createTBody();
-            for (let i = 1; i <= 9; i++) {
-                const row = tbody.insertRow();
-                const letters = lettersBySoma[i];
-
-                const cellLiczba = row.insertCell();
-                cellLiczba.textContent = i;
-
-                const cellLitery = row.insertCell();
-                cellLitery.textContent = letters.join(', ') || '-';
-
-                const cellSuma = row.insertCell();
-                cellSuma.textContent = letters.length;
-            }
-
-            container.appendChild(table);
-        }
-
     </script>
 </body>
 </html>

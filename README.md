@@ -13,7 +13,7 @@ A lightweight web application for numerological calculations and analysis. This 
   - Perfect Numbers (purple)
   - Fatal/Diabolical Numbers (red)
 
-### Magic Square (Kwadrat Magiczny)
+### Magic Square (Kwadrat Pitagorejski)
 - Generate a 3x3 numerological grid based on input names
 - Place letters in cells according to their Soma value
 - Provide a summary showing the distribution of letters across different numerological values
@@ -58,7 +58,7 @@ A lightweight web application for numerological calculations and analysis. This 
 
 - `numerologia.html` - Main landing page with links to all tools
 - `index.html` - Numerology Calculator implementation
-- `kwadrat_magiczny.html` - Magic Square implementation
+- `kwadrat_pitagorejski.html` - Magic Square implementation
 - `analiza_daty_urodzenia.html` - Birth Date Analysis implementation
 - `sth-logo.png` - Logo image used in the application
 - `SGH.jpeg` - Additional image resource
@@ -70,5 +70,3 @@ The application interface is in Polish.
 ## License
 
 This project is available for personal and educational use.
-
-
