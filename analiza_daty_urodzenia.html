@@ -615,10 +615,10 @@
 
         function generateLifeCyclesTable(container, data) {
             const tableData = [
-                { label: 'Liczba miesiąca', number: data.month.final, cycle: '1-27' },
-                { label: 'Liczba dnia', number: data.day.final, cycle: '28-54' },
-                { label: 'Liczba roku', number: data.year.final, cycle: '55-81' },
-                { label: 'Liczba daty', number: data.digitSum.reducedSum.final, cycle: 'po 81' }
+                { label: 'I - liczba miesiąca', number: data.month.final, cycle: '1-27' },
+                { label: 'II - liczba dnia', number: data.day.final, cycle: '28-54' },
+                { label: 'III - liczba roku', number: data.year.final, cycle: '55-81' },
+                { label: 'IV - liczba daty', number: data.digitSum.reducedSum.final, cycle: '82-108' }
             ];
             const table = document.createElement('table');
             table.className = 'cycles-table';
