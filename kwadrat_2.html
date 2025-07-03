@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kwadrat Pitagorejski — perfect highlights</title>
+    <title>Kwadrat Pitagorejski — coloured empties</title>
 
     <!-- Tailwind & fonts -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -38,10 +38,16 @@
             overflow: hidden;
         }
 
-        /* direct background so it never bleeds past border */
+        /* highlighted (all‑filled line) */
         .square-cell.is-highlighted {
             background-color: rgba(152, 251, 152, 0.45);
-            background-clip: padding-box; /* keep green strictly inside border */
+            background-clip: padding-box;
+        }
+
+        /* empty cell */
+        .square-cell.is-empty {
+            background-color: rgba(255, 99, 71, 0.15); /* gentle red */
+            background-clip: padding-box;
         }
 
         /* ─── TYPOGRAPHY ───────────────────────────────────────── */
@@ -96,9 +102,9 @@
 </div>
 
 <script>
-/* --------------------------------------------------
- * DATA MAPPINGS
- * ------------------------------------------------*/
+/******************************
+ * DATA
+ *****************************/
 const letterToSoma = {
     'A':1,'a':1,'Ą':1,'ą':1,'Ä':1,'ä':1,'J':1,'j':1,'S':1,'s':1,'Ś':1,'ś':1,'ß':1,
     'B':2,'b':2,'K':2,'k':2,'T':2,'t':2,
@@ -111,9 +117,9 @@ const letterToSoma = {
     'I':9,'i':9,'R':9,'r':9
 };
 
-/* --------------------------------------------------
+/******************************
  * DOM CACHE
- * ------------------------------------------------*/
+ *****************************/
 const calculateBtn = document.getElementById('calculateBtn');
 const nameInput    = document.getElementById('nameInput');
 const resultsArea  = document.getElementById('resultsArea');
@@ -121,9 +127,9 @@ const resultsArea  = document.getElementById('resultsArea');
 calculateBtn.addEventListener('click', processInput);
 nameInput.addEventListener('keyup', e => { if (e.key === 'Enter') processInput(); });
 
-/* --------------------------------------------------
+/******************************
  * MAIN FLOW
- * ------------------------------------------------*/
+ *****************************/
 function processInput() {
     resultsArea.innerHTML = '';
     const input = nameInput.value.trim();
@@ -139,83 +145,142 @@ function processInput() {
     words.forEach(createSquare);
 }
 
-/* --------------------------------------------------
- * SQUARE GENERATION
- * ------------------------------------------------*/
+/******************************
+ * GENERATE ONE SQUARE
+ *****************************/
 function createSquare(word) {
-    const wrapper = document.createElement('div'); wrapper.className = 'space-y-4';
-    const title = document.createElement('h2'); title.className='text-2xl font-bold text-center text-gray-800'; title.textContent=`Kwadrat dla: "${word}"`; wrapper.appendChild(title);
+    // container
+    const wrapper = document.createElement('div');
+    wrapper.className = 'space-y-4';
 
-    const grid = document.createElement('div'); grid.className='numerology-square';
+    // title
+    const title = document.createElement('h2');
+    title.className = 'text-2xl font-bold text-center text-gray-800';
+    title.textContent = `Kwadrat dla: "${word}"`;
+    wrapper.appendChild(title);
+
+    // grid
+    const grid = document.createElement('div');
+    grid.className = 'numerology-square';
+
+    // cells reference map
     const cells = {};
-    for(let i=1;i<=9;i++){
-        const cell=document.createElement('div');
-        cell.className='square-cell';
-        cell.innerHTML=`<span class="cell-number">${i}</span><div id="letters-${word}-${i}" class="cell-letters"></div>`;
-        cells[i]=cell;
+    for (let i = 1; i <= 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'square-cell';
+        cell.innerHTML = `<span class="cell-number">${i}</span><div id="letters-${word}-${i}" class="cell-letters"></div>`;
+        cells[i] = cell;
     }
 
-    for(const ch of word){
-        const soma=letterToSoma[ch]; if(!soma) continue;
-        const box=cells[soma].querySelector(`#letters-${word}-${soma}`);
-        box.textContent+=box.textContent?`, ${ch}`:ch;
+    // distribute letters
+    for (const ch of word) {
+        const soma = letterToSoma[ch];
+        if (!soma) continue;
+        const box = cells[soma].querySelector(`#letters-${word}-${soma}`);
+        box.textContent += box.textContent ? `, ${ch}` : ch;
     }
 
-    // adaptive font-size
-    for(let i=1;i<=9;i++){
-        const box=cells[i].querySelector(`#letters-${word}-${i}`);
-        const len=box.textContent.length;
-        box.style.fontSize=len>25?'0.65rem':len>18?'0.8rem':len>12?'0.9rem':len>6?'1rem':'1.1rem';
+    // responsive font-size inside each cell
+    for (let i = 1; i <= 9; i++) {
+        const box = cells[i].querySelector(`#letters-${word}-${i}`);
+        const len = box.textContent.length;
+        box.style.fontSize =
+            len > 25 ? '0.65rem' :
+            len > 18 ? '0.8rem'  :
+            len > 12 ? '0.9rem'  :
+            len > 6  ? '1rem'    : '1.1rem';
     }
 
-    highlightLines(cells, word);
+    // colour logic
+    highlightAndEmpty(cells, word);
 
-    [3,6,9,2,5,8,1,4,7].forEach(n=>grid.appendChild(cells[n]));
+    // append cells in visual order
+    [3,6,9,2,5,8,1,4,7].forEach(n => grid.appendChild(cells[n]));
     wrapper.appendChild(grid);
 
-    // summary toggle
-    const btnWrap=document.createElement('div'); btnWrap.className='text-center mt-6';
-    const btn=document.createElement('button'); btn.className='bg-gray-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-700 active:bg-gray-800 transition'; btn.textContent='Podsumowanie'; btnWrap.appendChild(btn);
-    const summary=document.createElement('div'); summary.className='hidden mt-4'; summary.id=`summary-${word}`;
-    btn.addEventListener('click',()=>{
-        const hidden=summary.classList.toggle('hidden');
-        btn.textContent=hidden?'Podsumowanie':'Ukryj podsumowanie';
-        if(!hidden && !summary.innerHTML) buildSummary(word, summary);
+    // summary button & container
+    const btnWrap = document.createElement('div');
+    btnWrap.className = 'text-center mt-6';
+    const btn = document.createElement('button');
+    btn.className = 'bg-gray-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-700 active:bg-gray-800 transition';
+    btn.textContent = 'Podsumowanie';
+    btnWrap.appendChild(btn);
+
+    const summary = document.createElement('div');
+    summary.className = 'hidden mt-4';
+    summary.id = `summary-${word}`;
+
+    btn.addEventListener('click', () => {
+        const hidden = summary.classList.toggle('hidden');
+        btn.textContent = hidden ? 'Podsumowanie' : 'Ukryj podsumowanie';
+        if (!hidden && !summary.innerHTML) buildSummary(word, summary);
     });
-    wrapper.appendChild(btnWrap); wrapper.appendChild(summary);
+
+    wrapper.appendChild(btnWrap);
+    wrapper.appendChild(summary);
+
     resultsArea.appendChild(wrapper);
 }
 
-/* --------------------------------------------------
- * HIGHLIGHT LOGIC
- * ------------------------------------------------*/
-function highlightLines(cells, word){
-    const filled={};
-    for(let i=1;i<=9;i++) filled[i]=!!cells[i].querySelector(`#letters-${word}-${i}`).textContent.trim();
+/******************************
+ * COLOURING LOGIC
+ *****************************/
+function highlightAndEmpty(cells, word) {
+    const filled = {};
+    for (let i = 1; i <= 9; i++) {
+        filled[i] = !!cells[i].querySelector(`#letters-${word}-${i}`).textContent.trim();
+    }
 
-    const ROWS=[[3,6,9],[2,5,8],[1,4,7]];
-    const COLS=[[3,2,1],[6,5,4],[9,8,7]];
-    const DIAGS=[[1,5,9],[3,5,7]];
-    const lines=[...ROWS,...COLS,...DIAGS];
+    // mark empties
+    for (let i = 1; i <= 9; i++) {
+        if (!filled[i]) cells[i].classList.add('is-empty');
+    }
 
-    const highlight=new Set();
-    lines.forEach(line=>{ if(line.every(n=>filled[n])) line.forEach(n=>highlight.add(n)); });
-    highlight.forEach(n=>cells[n].classList.add('is-highlighted'));
+    // evaluate complete lines
+    const ROWS   = [[3,6,9],[2,5,8],[1,4,7]];
+    const COLS   = [[3,2,1],[6,5,4],[9,8,7]];
+    const DIAGS  = [[1,5,9],[3,5,7]];
+    const lines  = [...ROWS, ...COLS, ...DIAGS];
+
+    const toHighlight = new Set();
+    lines.forEach(line => {
+        if (line.every(n => filled[n])) line.forEach(n => toHighlight.add(n));
+    });
+
+    toHighlight.forEach(n => cells[n].classList.add('is-highlighted'));
 }
 
-/* --------------------------------------------------
- * SUMMARY TABLE
- * ------------------------------------------------*/
-function buildSummary(word, container){
-    const buckets=Array.from({length:10},()=>[]);
-    for(const ch of word){ const v=letterToSoma[ch]; if(v) buckets[v].push(ch);}
-    const tbl=document.createElement('table'); tbl.className='summary-table';
-    const head=tbl.createTHead(); const hr=head.insertRow(); ['Liczba','Litery','Suma'].forEach(txt=>{const th=document.createElement('th'); th.textContent=txt; hr.appendChild(th);});
-    const body=tbl.createTBody();
-    for(let i=1;i<=9;i++){
-        const row=body.insertRow(); row.insertCell().textContent=i; row.insertCell().textContent=buckets[i].join(', ')||'-'; row.insertCell().textContent=buckets[i].length;
+/******************************
+ * SUMMARY TABLE BUILDER
+ *****************************/
+function buildSummary(word, container) {
+    const buckets = Array.from({ length: 10 }, () => []); // 0‑9 idx, ignore 0
+
+    for (const ch of word) {
+        const soma = letterToSoma[ch];
+        if (soma) buckets[soma].push(ch);
     }
-    container.appendChild(tbl);
+
+    const table = document.createElement('table');
+    table.className = 'summary-table';
+
+    const thead = table.createTHead();
+    const headerRow = thead.insertRow();
+    ['Liczba','Litery','Suma'].forEach(txt => {
+        const th = document.createElement('th');
+        th.textContent = txt;
+        headerRow.appendChild(th);
+    });
+
+    const tbody = table.createTBody();
+    for (let i = 1; i <= 9; i++) {
+        const row = tbody.insertRow();
+        row.insertCell().textContent = i;
+        row.insertCell().textContent = buckets[i].join(', ') || '-';
+        row.insertCell().textContent = buckets[i].length;
+    }
+
+    container.appendChild(table);
 }
 </script>
 </body>
