@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kałkulator Numerologiczny</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style dla nagłówków tabeli */
+        th {
+            background-color: #f3f4f6; /* Jasnoszary */
+            font-weight: 600;
+        }
+        /* Wyśrodkowanie tekstu w komórkach */
+        td, th {
+            text-align: center;
+            padding: 0.75rem;
+        }
+        /* Obramowanie tabeli */
+        table, th, td {
+            border: 1px solid #d1d5db; /* Średnioszary */
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-4xl">
+        <!-- Link powrotu do strony głównej -->
+        <div class="mb-4 text-center">
+            <a href="numerologia.html" class="text-blue-600 hover:text-blue-800 font-medium">
+                &larr; Powrót do strony głównej
+            </a>
+        </div>
+
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+
+            <!-- Nagłówek -->
+            <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-6">Kalkulator Numerologiczny</h1>
+
+            <!-- Sekcja wejściowa -->
+            <div class="flex flex-col sm:flex-row items-center gap-4 mb-6">
+                <label for="nameInput" class="text-lg font-medium whitespace-nowrap"></label>
+                <input type="text" id="nameInput" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="np. Jan Dawid Kowalski">
+            </div>
+
+            <!-- Przycisk Oblicz -->
+            <div class="text-center mb-8">
+                <button id="calculateBtn" class="bg-blue-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-transform transform hover:scale-105">
+                    Oblicz
+                </button>
+            </div>
+
+            <!-- Obszar wyników -->
+            <div id="resultsArea" class="space-y-8">
+                <!-- Wyniki będą dynamicznie wstawiane tutaj -->
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- Deklaracje zmiennych dla danych ---
+        let specialNumbers = {};
+        let letterToValues = {};
+
+        // --- Funkcja inicjalizująca aplikację po załadowaniu danych ---
+        async function initializeApp() {
+            try {
+                // Ładowanie danych z plików JSON
+                const [specialNumbersResponse, letterValuesResponse] = await Promise.all([
+                    fetch('specialNumbers.json'),
+                    fetch('letterValues.json')
+                ]);
+
+                if (!specialNumbersResponse.ok || !letterValuesResponse.ok) {
+                    throw new Error('Problem z załadowaniem danych');
+                }
+
+                specialNumbers = await specialNumbersResponse.json();
+                letterToValues = await letterValuesResponse.json();
+
+                // Inicjalizacja elementów DOM i event listenerów po załadowaniu danych
+                setupEventListeners();
+            } catch (error) {
+                console.error('Błąd podczas ładowania danych:', error);
+                document.getElementById('resultsArea').innerHTML =
+                    `<p class="text-center text-red-500">Błąd podczas ładowania danych. Odśwież stronę lub spróbuj później.</p>`;
+            }
+        }
+
+        // --- Elementy DOM ---
+        const calculateBtn = document.getElementById('calculateBtn');
+        const nameInput = document.getElementById('nameInput');
+        const resultsArea = document.getElementById('resultsArea');
+
+        // --- Funkcja pomocnicza do sumowania cyfr ---
+        function sumDigits(n) {
+            return String(n).split('').reduce((acc, digit) => acc + parseInt(digit, 10), 0);
+        }
+
+        // --- Konfiguracja event listenerów ---
+        function setupEventListeners() {
+            calculateBtn.addEventListener('click', processInput);
+            nameInput.addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    processInput();
+                }
+            });
+        }
+
+        function processInput() {
+            resultsArea.innerHTML = '';
+            const inputStr = nameInput.value.trim();
+            if (!inputStr) {
+                resultsArea.innerHTML = `<p class="text-center text-red-500">Proszę wpisać imię.</p>`;
+                return;
+            }
+            const words = inputStr.split(/\s+/).filter(word => word.length > 0);
+            if (words.length > 5) {
+                resultsArea.innerHTML = `<p class="text-center text-red-500 font-semibold">Zbyt wiele imion. Maksymalnie 5.</p>`;
+                return;
+            }
+            words.forEach((word) => {
+                const label = `Tabela wyliczeń G-NPS dla: ${word}`;
+                createTableForWord(word, label);
+            });
+        }
+
+        /**
+         * Tworzy i dołącza tabelę wyników dla danego słowa, uwzględniając liczby specjalne.
+         * @param {string} word - Słowo do przetworzenia.
+         * @param {string} label - Etykieta dla tabeli.
+         */
+        function createTableForWord(word, label) {
+            // --- Inicjalizacja ---
+            let totalGematrikon = 0, totalNous = 0, totalPsyche = 0, totalSoma = 0;
+
+            // --- Tworzenie struktury tabeli ---
+            const tableContainer = document.createElement('div');
+            const tableLabel = document.createElement('h2');
+            tableLabel.className = 'text-2xl font-bold mb-3 text-center text-gray-800';
+            tableLabel.textContent = label;
+            const table = document.createElement('table');
+            table.className = 'min-w-full bg-white rounded-lg shadow-md overflow-hidden';
+
+            // Nagłówek tabeli
+            const thead = table.createTHead();
+            const headerRow = thead.insertRow();
+            const headers = ['Gematrikon', 'Litery', 'Nous', 'Psyche', 'Soma'];
+            headers.forEach(headerText => {
+                const th = document.createElement('th');
+                th.className = 'px-4 py-3 border-b-2 border-gray-300 bg-gray-100 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider';
+                th.textContent = headerText;
+                headerRow.appendChild(th);
+            });
+
+            // Ciało tabeli
+            const tbody = table.createTBody();
+            for (const char of word) {
+                if (char === ' ') continue;
+                const values = letterToValues[char];
+                let gematrikon = 'N/A', nous = 'N/A', psyche = 'N/A', soma = 'N/A';
+
+                if (values) {
+                    gematrikon = values.Gematrikon; nous = values.Nous; psyche = values.Psyche; soma = values.Soma;
+                    totalGematrikon += gematrikon; totalNous += nous; totalPsyche += psyche; totalSoma += soma;
+                }
+
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td class="px-4 py-3 border-b border-gray-200">${gematrikon}</td>
+                    <td class="px-4 py-3 border-b border-gray-200 font-mono font-bold bg-gray-100">${char}</td>
+                    <td class="px-4 py-3 border-b border-gray-200">${nous}</td>
+                    <td class="px-4 py-3 border-b border-gray-200">${psyche}</td>
+                    <td class="px-4 py-3 border-b border-gray-200">${soma}</td>
+                `;
+            }
+
+            // --- Dodawanie wierszy sum i redukcji ---
+            const tfoot = table.createTFoot();
+            const totalRow = tfoot.insertRow();
+            totalRow.className = 'bg-gray-200 font-bold';
+
+            // Funkcja do formatowania liczby z odpowiednim kolorem, jeśli jest specjalna
+            const formatNumber = (num) => {
+                const specialInfo = specialNumbers[num];
+                return specialInfo ? `<span class="${specialInfo.colorClass}">${num}</span>` : num;
+            };
+
+            totalRow.innerHTML = `
+                <td class="px-4 py-3">${formatNumber(totalGematrikon)}</td>
+                <td class="px-4 py-3">Total</td>
+                <td class="px-4 py-3">${formatNumber(totalNous)}</td>
+                <td class="px-4 py-3">${formatNumber(totalPsyche)}</td>
+                <td class="px-4 py-3">${formatNumber(totalSoma)}</td>
+            `;
+
+            // Obliczanie kroków redukcji, z zatrzymaniem na liczbach specjalnych
+            const getReductionSteps = (num) => {
+                const steps = [];
+                if (specialNumbers[num]) return []; // Nie redukuj, jeśli początkowa suma jest specjalna
+
+                let currentNum = num;
+                while (currentNum > 9) {
+                    currentNum = sumDigits(currentNum);
+                    const specialInfo = specialNumbers[currentNum];
+                    steps.push({ value: currentNum, isSpecial: !!specialInfo, colorClass: specialInfo?.colorClass });
+                    if (specialInfo) break; // Zatrzymaj redukcję, jeśli osiągnięto liczbę specjalną
+                }
+                return steps;
+            };
+
+            const gematrikonSteps = getReductionSteps(totalGematrikon);
+            const nousSteps = getReductionSteps(totalNous);
+            const psycheSteps = getReductionSteps(totalPsyche);
+            const somaSteps = getReductionSteps(totalSoma);
+
+            const maxSteps = Math.max(gematrikonSteps.length, nousSteps.length, psycheSteps.length, somaSteps.length);
+
+            // Dodawanie wierszy dla każdego kroku redukcji
+            for (let i = 0; i < maxSteps; i++) {
+                const reductionRow = tfoot.insertRow();
+                reductionRow.className = 'bg-gray-50';
+
+                // Funkcja pomocnicza do formatowania komórki z wynikiem redukcji
+                const formatCellContent = (step) => {
+                    if (!step) return '';
+                    const classColor = step.isSpecial ? step.colorClass : '';
+                    return `<span class="${classColor} font-semibold">${step.value}</span>`;
+                };
+
+                reductionRow.innerHTML = `
+                    <td class="px-4 py-3 border-b border-gray-200">${formatCellContent(gematrikonSteps[i])}</td>
+                    <td class="px-4 py-3 border-b border-gray-200"></td>
+                    <td class="px-4 py-3 border-b border-gray-200">${formatCellContent(nousSteps[i])}</td>
+                    <td class="px-4 py-3 border-b border-gray-200">${formatCellContent(psycheSteps[i])}</td>
+                    <td class="px-4 py-3 border-b border-gray-200">${formatCellContent(somaSteps[i])}</td>
+                `;
+            }
+
+            // --- Dołączenie do DOM ---
+            tableContainer.appendChild(tableLabel);
+            tableContainer.appendChild(table);
+            resultsArea.appendChild(tableContainer);
+        }
+
+        // Inicjalizacja aplikacji po załadowaniu strony
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>
