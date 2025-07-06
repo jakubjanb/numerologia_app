@@ -26,16 +26,21 @@
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             overflow:hidden; /* keep rounded edges tidy */
         }
+
+        /* MODIFIED: This is the main change.
+           - We use flexbox to center the content (the letters).
+           - `position: relative` allows us to position the cell number absolutely inside it.
+        */
         .square-cell {
             border:1px solid #e5e7eb;
             display:flex;
-            flex-direction:column;
-            justify-content:space-between;
-            align-items:flex-start;
+            justify-content:center;
+            align-items:center;
             padding:0.5rem;
             min-height:100px;
             box-sizing:border-box;
             transition:background-color 0.3s ease;
+            position: relative; /* For positioning the number */
         }
         /* --- colouring classes --- */
         .square-cell.has-letter { background-color:rgba(134,239,172,0.25); } /* green tint */
@@ -43,8 +48,26 @@
         .square-cell.is-empty { background-color:rgba(255,99,71,0.15); } /* gentle red */
 
         /* ─── TYPOGRAPHY ───────────────────────────────────────── */
-        .cell-number{ font-size:1.1rem; font-weight:bold; color:#9ca3af; }
-        .cell-letters{ font-weight:500; color:#1f2937; word-break:break-word; line-height:1.3; transition:font-size 0.2s ease-in-out; }
+
+        /* MODIFIED: The cell number is now positioned absolutely in the top-left corner. */
+        .cell-number{
+            position: absolute;
+            top: 0.05rem;
+            left: 0.3rem;
+            font-size:1.1rem;
+            font-weight:bold;
+            color:#9ca3af;
+        }
+
+        /* MODIFIED: Added text-align:center to ensure letters are centered, especially if they wrap. */
+        .cell-letters{
+            font-weight:500;
+            color:#1f2937;
+            word-break:break-word;
+            line-height:1.3;
+            transition:font-size 0.2s ease-in-out;
+            text-align: center;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
