@@ -68,7 +68,7 @@
         }
         /* Mobile-friendly touch targets */
         @media (max-width: 640px) {
-            input[type="date"], 
+            input[type="date"],
             .date-fallback select,
             button {
                 min-height: 48px; /* Minimum touch target size */
@@ -213,8 +213,8 @@
             <div class="max-w-sm mx-auto space-y-4 mb-6">
                 <label for="birthDateInput" class="block text-lg font-medium text-gray-700 text-center">Wprowadź swoją datę urodzenia:</label>
                 <div class="date-input-container">
-                    <input type="date" id="birthDateInput" 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-center text-lg shadow-sm" 
+                    <input type="date" id="birthDateInput"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-center text-lg shadow-sm"
                            placeholder=" "
                            aria-label="Data urodzenia"
                            aria-describedby="dateFormatHint dateError"
@@ -231,7 +231,7 @@
                 <div id="dateError" class="date-error" role="alert" aria-live="polite">Proszę wybrać poprawną datę urodzenia.</div>
             </div>
             <div class="text-center mb-8">
-                <button id="analyzeBtn" 
+                <button id="analyzeBtn"
                         class="bg-indigo-600 text-white font-bold py-3 px-10 rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-all duration-300 transform hover:scale-105 shadow-md"
                         aria-label="Analizuj datę urodzenia">
                     Analizuj
@@ -308,7 +308,7 @@
                 monthSelect.appendChild(monthPlaceholder);
 
                 // Populate month select with names
-                const months = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 
+                const months = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
                                'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
                 months.forEach((month, i) => {
                     const option = document.createElement('option');
@@ -406,15 +406,7 @@
            //     return false;
            // }
 
-            // Additional validation for realistic birth dates
-            const minDate = new Date();
-            minDate.setFullYear(minDate.getFullYear() - 520); // Maximum realistic age
-
-            if (selectedDate < minDate) {
-                // Just a warning, still allow the date
-                showDateError('Uwaga: Wprowadzona data jest bardzo odległa. Kontynuuj jeśli jest poprawna.');
-                return true;
-            }
+            // No far-past date validation needed
 
             hideDateError();
             return true;
@@ -558,13 +550,17 @@
             };
 
             // --- Logika centrująca ---
-            // Use digitSum instead of lifePath for the center
             const digitSumValue = data.digitSum.sum;
             const digitSumReducedValue = data.digitSum.reducedSum.final;
             const lifePathDy = 35;
             const lifePathCenterY = 250;
-            // Center position for the digit sum and its reduced form
             const digitSumStartY = lifePathCenterY - lifePathDy;
+
+            // --- Conditional Spacing Logic ---
+            const defaultLineSpacing = 28;
+            const yearLineCount = data.year.allSteps.length;
+            // When yearLineCount >= 2 (i.e., > 1), compute new spacing.
+            const yearSpacing = yearLineCount > 1 ? defaultLineSpacing * 0.9 : defaultLineSpacing;
 
             return `
                 <div class="birth-chart-container">
@@ -578,9 +574,9 @@
                             <text x="325" y="210" class="chart-label" transform="rotate(60 325,210)">MIESIĄC</text>
                             <text x="250" y="345" class="chart-label">ROK</text>
 
-                            ${createTextBlock(data.day.allSteps, 110, 160, 28, 'chart-final-number')}
-                            ${createTextBlock(data.month.allSteps, 395, 160, 28, 'chart-final-number')}
-                            ${createTextBlock(data.year.allSteps, 250, 350, 28, 'chart-final-number')}
+                            ${createTextBlock(data.day.allSteps, 110, 160, defaultLineSpacing, 'chart-final-number')}
+                            ${createTextBlock(data.month.allSteps, 395, 160, defaultLineSpacing, 'chart-final-number')}
+                            ${createTextBlock(data.year.allSteps, 250, 350, yearSpacing, 'chart-final-number')}
                             <text x="250" y="${digitSumStartY}" class="chart-final-number">${digitSumValue}</text>
                             <text x="250" y="${digitSumStartY + lifePathDy}" class="chart-final-number">${digitSumReducedValue}</text>
                         </g>

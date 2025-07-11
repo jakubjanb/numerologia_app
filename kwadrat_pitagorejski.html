@@ -9,6 +9,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <style>
         body { font-family: 'Inter', sans-serif; }
 
@@ -109,7 +113,7 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-4xl">
-    <div class="mb-6 text-center">
+     <div class="mb-6 text-center">
         <a href="index.html" class="text-indigo-600 hover:text-indigo-800 font-medium">
             &larr; Powrót do strony głównej
         </a>
@@ -173,8 +177,9 @@ function processInput() {
 
 /******** BUILD SQUARE *********/
 function createSquare(word){
+  // Create a self-contained wrapper for this square and all its elements
   const wrapper = document.createElement('div');
-  wrapper.className = 'space-y-4';
+  wrapper.className = 'space-y-4 border-t-2 pt-8 mt-8';
 
   const h = document.createElement('h2');
   h.className = 'text-2xl font-bold text-center text-gray-800';
@@ -218,11 +223,27 @@ function createSquare(word){
   summaryBtn.className = 'bg-gray-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-700 active:bg-gray-800 transition';
   summaryBtn.textContent = 'Podsumowanie';
   const summaryContainer = document.createElement('div');
-  summaryContainer.className = 'hidden mt-4';
+  summaryContainer.className = 'hidden mt-4 summary-container';
   summaryBtn.addEventListener('click', () => {
       const isHidden = summaryContainer.classList.toggle('hidden');
       summaryBtn.textContent = isHidden ? 'Podsumowanie' : 'Ukryj Podsumowanie';
       if(!isHidden && !summaryContainer.innerHTML) buildSummary(word, summaryContainer);
+
+      // Get references to elements
+      const pdfBtn = wrapper.querySelector('.pdf-button');
+      const pdfBottomContainer = document.getElementById(`pdf-bottom-container-${word.replace(/\s+/g, '_')}`);
+      const analysisVisible = !analysisContainer.classList.contains('hidden');
+
+      // Update PDF button position
+      if (!isHidden || analysisVisible) {
+          // At least one section is visible, move PDF button to bottom container
+          pdfBottomContainer.style.display = 'flex';
+          pdfBottomContainer.appendChild(pdfBtn);
+      } else {
+          // Both sections are hidden, move PDF button back to button container
+          pdfBottomContainer.style.display = 'none';
+          btnContainer.appendChild(pdfBtn);
+      }
   });
   btnContainer.appendChild(summaryBtn);
 
@@ -231,17 +252,47 @@ function createSquare(word){
   analysisBtn.className = 'bg-teal-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-teal-700 active:bg-teal-800 transition';
   analysisBtn.textContent = 'Analiza Strzał i Diad';
   const analysisContainer = document.createElement('div');
-  analysisContainer.className = 'hidden mt-4';
+  analysisContainer.className = 'hidden mt-4 analysis-container';
   analysisBtn.addEventListener('click', () => {
       const isHidden = analysisContainer.classList.toggle('hidden');
       analysisBtn.textContent = isHidden ? 'Analiza Strzał i Diad' : 'Ukryj Analizę';
       if(!isHidden && !analysisContainer.innerHTML) buildAnalysisTables(analysisContainer, filledMap);
+
+      // Get references to elements
+      const pdfBtn = wrapper.querySelector('.pdf-button');
+      const pdfBottomContainer = document.getElementById(`pdf-bottom-container-${word.replace(/\s+/g, '_')}`);
+      const summaryVisible = !summaryContainer.classList.contains('hidden');
+
+      // Update PDF button position
+      if (!isHidden || summaryVisible) {
+          // At least one section is visible, move PDF button to bottom container
+          pdfBottomContainer.style.display = 'flex';
+          pdfBottomContainer.appendChild(pdfBtn);
+      } else {
+          // Both sections are hidden, move PDF button back to button container
+          pdfBottomContainer.style.display = 'none';
+          btnContainer.appendChild(pdfBtn);
+      }
   });
   btnContainer.appendChild(analysisBtn);
+
+  // --- PDF Button (specific to this square) ---
+  const pdfBtn = document.createElement('button');
+  pdfBtn.className = 'bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition pdf-button';
+  pdfBtn.textContent = 'Zapisz PDF';
+  pdfBtn.addEventListener('click', () => generatePdfForSquare(word, wrapper));
+  btnContainer.appendChild(pdfBtn);
+
+  // Create a dedicated container for the PDF button that will be positioned at the bottom
+  const pdfBottomContainer = document.createElement('div');
+  pdfBottomContainer.className = 'flex justify-center mt-4 pdf-bottom-container';
+  pdfBottomContainer.id = `pdf-bottom-container-${word.replace(/\s+/g, '_')}`;
+  pdfBottomContainer.style.display = 'none'; // Initially hidden
 
   wrapper.appendChild(btnContainer);
   wrapper.appendChild(summaryContainer);
   wrapper.appendChild(analysisContainer);
+  wrapper.appendChild(pdfBottomContainer);
 
   resultsArea.appendChild(wrapper);
 }
@@ -367,6 +418,131 @@ function buildAnalysisTables(container, filledMap) {
     wrapper.appendChild(dyadsDiv);
 
     container.appendChild(wrapper);
+}
+
+/******** PDF GENERATION (FOR A SINGLE SQUARE) *********/
+async function generatePdfForSquare(word, wrapperElement) {
+    const pdfBtn = wrapperElement.querySelector('.pdf-button');
+    if (pdfBtn) {
+        pdfBtn.textContent = 'Generowanie...';
+        pdfBtn.disabled = true;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = 190; // A4 width 210mm - 20mm margins
+
+    // --- Find the content within the specific wrapper ---
+    const grid = wrapperElement.querySelector('.numerology-square');
+    const summary = wrapperElement.querySelector('.summary-container:not(.hidden)');
+    const analysis = wrapperElement.querySelector('.analysis-container:not(.hidden)');
+
+    // --- Create temporary containers for capturing content ---
+    const page1Container = document.createElement('div');
+    page1Container.style.width = '800px';
+    page1Container.style.position = 'absolute';
+    page1Container.style.left = '-9999px';
+    page1Container.style.backgroundColor = 'white';
+    page1Container.className = 'p-4';
+
+    const page2Container = page1Container.cloneNode(false);
+    let hasPage2Content = false;
+
+    // --- Add main title to Page 1 ---
+    const mainTitle = document.createElement('h1');
+    mainTitle.textContent = `Kwadrat Pitagorejski dla: "${word}"`;
+    mainTitle.className = 'text-3xl font-bold text-center text-gray-900 mb-8';
+    page1Container.appendChild(mainTitle);
+
+    // --- Populate containers with the content to be saved ---
+    if (grid) {
+        const clonedGrid = grid.cloneNode(true);
+        // Apply specific styles to the cloned grid for PDF rendering
+        const numberSpans = clonedGrid.querySelectorAll('.cell-number');
+        numberSpans.forEach(span => {
+            span.style.top = '-8px';
+            span.style.left = '5px';
+        });
+
+        // Ensure letters are well-centered in the PDF
+        const letterDivs = clonedGrid.querySelectorAll('.cell-letters');
+        letterDivs.forEach(div => {
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            // Add these two lines to nudge it up
+            div.style.position = 'relative';
+            div.style.top = '-10px'; // Nudges the text 5 pixels up from the center
+            div.style.justifyContent = 'center';
+            div.style.height = '100%'; // Ensure it uses the full cell height
+            div.style.padding = '5px'; // Add some padding
+        });
+
+        page1Container.appendChild(clonedGrid);
+    }
+
+    if (summary) {
+        const summarySpacer = document.createElement('div');
+        summarySpacer.style.height = '30px';
+        page1Container.appendChild(summarySpacer);
+
+        const summaryTitle = document.createElement('h3');
+        summaryTitle.className = 'text-xl font-bold text-center text-gray-800 mb-3';
+        summaryTitle.textContent = 'Podsumowanie';
+        page1Container.appendChild(summaryTitle);
+
+        page1Container.appendChild(summary.querySelector('.summary-table').cloneNode(true));
+    }
+
+    // If analysis is visible AND summary is NOT, add analysis to page 1
+    if (analysis && !summary) {
+        const analysisSpacer = document.createElement('div');
+        analysisSpacer.style.height = '30px';
+        page1Container.appendChild(analysisSpacer);
+        page1Container.appendChild(analysis.cloneNode(true));
+    }
+
+    // If analysis is visible AND summary IS ALSO visible, add analysis to page 2
+    if (analysis && summary) {
+        hasPage2Content = true;
+        const analysisTitle = document.createElement('h1');
+        analysisTitle.textContent = `Analiza Strzał i Diad dla: "${word}"`;
+        analysisTitle.className = 'text-3xl font-bold text-center text-gray-900 mb-8';
+        page2Container.appendChild(analysisTitle);
+        page2Container.appendChild(analysis.cloneNode(true));
+    }
+
+    // --- Generate Page 1 ---
+    document.body.appendChild(page1Container);
+    const canvas1 = await html2canvas(page1Container, { scale: 3, useCORS: true });
+    document.body.removeChild(page1Container);
+
+    const imgData1 = canvas1.toDataURL('image/jpeg', 0.9);
+    const imgProps1 = pdf.getImageProperties(imgData1);
+    const imgHeight1 = (imgProps1.height * pdfWidth) / imgProps1.width;
+    pdf.addImage(imgData1, 'JPEG', 10, 20, pdfWidth, imgHeight1);
+
+    // --- Generate Page 2 if there is content for it ---
+    if (hasPage2Content) {
+        pdf.addPage();
+        document.body.appendChild(page2Container);
+        const canvas2 = await html2canvas(page2Container, { scale: 3, useCORS: true });
+        document.body.removeChild(page2Container);
+
+        const imgData2 = canvas2.toDataURL('image/jpeg', 0.9);
+        const imgProps2 = pdf.getImageProperties(imgData2);
+        const imgHeight2 = (imgProps2.height * pdfWidth) / imgProps2.width;
+        pdf.addImage(imgData2, 'JPEG', 10, 20, pdfWidth, imgHeight2);
+    }
+
+    // --- Save the final PDF ---
+    const inputName = word.replace(/\s+/g, '_') || 'analiza';
+    pdf.save(`kwadrat_${inputName}.pdf`);
+
+    // Restore button state
+    if (pdfBtn) {
+        pdfBtn.textContent = 'Zapisz PDF';
+        pdfBtn.disabled = false;
+    }
 }
 
 </script>

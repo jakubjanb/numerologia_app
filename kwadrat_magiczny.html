@@ -9,6 +9,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <style>
         body { font-family: 'Inter', sans-serif; background-color:#f3f4f6; }
 
@@ -68,6 +72,33 @@
             transition:font-size 0.2s ease-in-out;
             text-align: center;
         }
+
+        /* ─── ANALYSIS TABLES ───────────────────────── */
+        .analysis-table {
+            width: 80%; max-width: 450px;
+            margin: 1rem auto 0 auto;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .analysis-table th, .analysis-table td {
+            border: 1px solid #d1d5db;
+            padding: 0.5rem;
+            text-align: center;
+        }
+        .analysis-table th { background-color: #f3f4f6; font-weight: 600; }
+
+        /* analysis table cell colors */
+        .cell-ok { background-color: rgba(60, 179, 113, 0.3); color: #2e7d32; }
+        .cell-not-ok { background-color: rgba(255, 99, 71, 0.2); color: #c62828; }
+        .analysis-table .cell-ok, .analysis-table .cell-not-ok { font-weight: bold; }
+
+        .analysis-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -91,7 +122,6 @@
 
       <div id="resultsArea" class="space-y-12"></div>
     </div>
-    <footer class="text-center text-gray-500 mt-8 text-sm">Kalkulator numerologiczny</footer>
   </div>
 
 <script>
@@ -153,11 +183,61 @@ function createSquare(word){
     box.style.fontSize=len>25?'0.7rem':len>18?'0.8rem':len>12?'0.9rem':len>6?'1rem':'1.1rem';
   }
 
-  colourCells(cells,word);
+  const filledMap = colourCells(cells,word);
 
   // custom visual order
   [4,9,2,3,5,7,8,1,6].forEach(n=>grid.appendChild(cells[n]));
   wrap.appendChild(grid);
+
+  // Add buttons container
+  const btnContainer = document.createElement('div');
+  btnContainer.className = 'text-center mt-6 flex flex-wrap justify-center gap-4';
+
+  // Analysis Button
+  const analysisBtn = document.createElement('button');
+  analysisBtn.className = 'bg-teal-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-teal-700 active:bg-teal-800 transition';
+  analysisBtn.textContent = 'Analiza Strzał i Diad';
+  const analysisContainer = document.createElement('div');
+  analysisContainer.className = 'hidden mt-4 analysis-container';
+  analysisBtn.addEventListener('click', () => {
+      const isHidden = analysisContainer.classList.toggle('hidden');
+      analysisBtn.textContent = isHidden ? 'Analiza Strzał i Diad' : 'Ukryj Analizę';
+      if(!isHidden && !analysisContainer.innerHTML) buildAnalysisTables(analysisContainer, filledMap);
+
+      // Get references to elements
+      const pdfBtn = wrap.querySelector('.pdf-button');
+      const pdfBottomContainer = document.getElementById(`pdf-bottom-container-${word.replace(/\s+/g, '_')}`);
+
+      // Update PDF button position
+      if (!isHidden) {
+          // Analysis section is visible, move PDF button to bottom container
+          pdfBottomContainer.style.display = 'flex';
+          pdfBottomContainer.appendChild(pdfBtn);
+      } else {
+          // Analysis section is hidden, move PDF button back to button container
+          pdfBottomContainer.style.display = 'none';
+          btnContainer.appendChild(pdfBtn);
+      }
+  });
+  btnContainer.appendChild(analysisBtn);
+
+  // PDF Button
+  const pdfBtn = document.createElement('button');
+  pdfBtn.className = 'bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition pdf-button';
+  pdfBtn.textContent = 'Zapisz PDF';
+  pdfBtn.addEventListener('click', () => generatePdfForSquare(word, wrap));
+  btnContainer.appendChild(pdfBtn);
+
+  // Create a dedicated container for the PDF button that will be positioned at the bottom
+  const pdfBottomContainer = document.createElement('div');
+  pdfBottomContainer.className = 'flex justify-center mt-4 pdf-bottom-container';
+  pdfBottomContainer.id = `pdf-bottom-container-${word.replace(/\s+/g, '_')}`;
+  pdfBottomContainer.style.display = 'none'; // Initially hidden
+
+  wrap.appendChild(btnContainer);
+  wrap.appendChild(analysisContainer);
+  wrap.appendChild(pdfBottomContainer);
+
   area.appendChild(wrap);
 }
 
@@ -180,6 +260,178 @@ function colourCells(cells,word){
   lines.forEach(line=>{
     if(line.every(n=>filled[n])) line.forEach(n=>cells[n].classList.add('is-highlighted'));
   });
+
+  return filled; // Return the map for later use
+}
+
+/* ========= ANALYSIS TABLES ========= */
+function buildAnalysisTables(container, filledMap) {
+    container.innerHTML = ''; // Clear previous content
+    const wrapper = document.createElement('div');
+    wrapper.className = 'analysis-wrapper';
+
+    // --- Arrows Table ---
+    const arrowsDiv = document.createElement('div');
+    const hArrows = document.createElement('h3');
+    hArrows.className = 'text-xl font-bold text-center text-gray-800 mb-3';
+    hArrows.textContent = 'Strzały';
+    arrowsDiv.appendChild(hArrows);
+
+    const arrowsTbl = document.createElement('table');
+    arrowsTbl.className = 'analysis-table';
+    const arrowsHead = arrowsTbl.createTHead();
+    const arrowsHr = arrowsHead.insertRow();
+    ['Strzała', ''].forEach(t => {
+        const th = document.createElement('th');
+        th.textContent = t;
+        arrowsHr.appendChild(th);
+    });
+
+    const arrowsBody = arrowsTbl.createTBody();
+    const arrows = ['816', '357', '492', '834', '159', '672', '852', '654'];
+
+    arrows.forEach(arrow => {
+        const row = arrowsBody.insertRow();
+        // Check if all digits in the arrow are filled in the square
+        const digits = arrow.split('').map(Number);
+        const isComplete = digits.every(n => filledMap[n]);
+        const className = isComplete ? 'cell-ok' : 'cell-not-ok';
+
+        const arrowCell = row.insertCell();
+        arrowCell.textContent = arrow;
+        arrowCell.className = className;
+
+        const resultCell = row.insertCell();
+        resultCell.textContent = isComplete ? '✓' : '✗';
+        resultCell.className = className;
+    });
+    arrowsDiv.appendChild(arrowsTbl);
+    wrapper.appendChild(arrowsDiv);
+
+    // --- Dyads Table ---
+    const dyadsDiv = document.createElement('div');
+    const hDyads = document.createElement('h3');
+    hDyads.className = 'text-xl font-bold text-center text-gray-800 mb-3';
+    hDyads.textContent = 'Diady';
+    dyadsDiv.appendChild(hDyads);
+
+    const dyadsTbl = document.createElement('table');
+    dyadsTbl.className = 'analysis-table';
+    const dyadsHead = dyadsTbl.createTHead();
+    const dyadsHr = dyadsHead.insertRow();
+    ['Diada', ''].forEach(t => {
+        const th = document.createElement('th');
+        th.textContent = t;
+        dyadsHr.appendChild(th);
+    });
+
+    const dyadsBody = dyadsTbl.createTBody();
+    const dyads = ['39', '97', '71', '13'];
+
+    dyads.forEach(dyad => {
+        const row = dyadsBody.insertRow();
+        // Check if all digits in the dyad are filled in the square
+        const digits = dyad.split('').map(Number);
+        const isComplete = digits.every(n => filledMap[n]);
+        const className = isComplete ? 'cell-ok' : 'cell-not-ok';
+
+        const dyadCell = row.insertCell();
+        dyadCell.textContent = dyad;
+        dyadCell.className = className;
+
+        const resultCell = row.insertCell();
+        resultCell.textContent = isComplete ? '✓' : '✗';
+        resultCell.className = className;
+    });
+    dyadsDiv.appendChild(dyadsTbl);
+    wrapper.appendChild(dyadsDiv);
+
+    container.appendChild(wrapper);
+}
+
+/******** PDF GENERATION (FOR A SINGLE SQUARE) *********/
+async function generatePdfForSquare(word, wrapperElement) {
+    const pdfBtn = wrapperElement.querySelector('.pdf-button');
+    if (pdfBtn) {
+        pdfBtn.textContent = 'Generowanie...';
+        pdfBtn.disabled = true;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = 190; // A4 width 210mm - 20mm margins
+
+    // --- Find the content within the specific wrapper ---
+    const grid = wrapperElement.querySelector('.numerology-square');
+    const analysis = wrapperElement.querySelector('.analysis-container:not(.hidden)');
+
+    // --- Create temporary container for capturing content ---
+    const pageContainer = document.createElement('div');
+    pageContainer.style.width = '800px';
+    pageContainer.style.position = 'absolute';
+    pageContainer.style.left = '-9999px';
+    pageContainer.style.backgroundColor = 'white';
+    pageContainer.className = 'p-4';
+
+    // --- Add main title ---
+    const mainTitle = document.createElement('h1');
+    mainTitle.textContent = `Kwadrat Magiczny dla: "${word}"`;
+    mainTitle.className = 'text-3xl font-bold text-center text-gray-900 mb-8';
+    pageContainer.appendChild(mainTitle);
+
+    // --- Populate container with the content to be saved ---
+    if (grid) {
+        const clonedGrid = grid.cloneNode(true);
+        // Apply specific styles to the cloned grid for PDF rendering
+        const numberSpans = clonedGrid.querySelectorAll('.cell-number');
+        numberSpans.forEach(span => {
+            span.style.top = '-8px';
+            span.style.left = '5px';
+        });
+
+        // Ensure letters are well-centered in the PDF
+        const letterDivs = clonedGrid.querySelectorAll('.cell-letters');
+        letterDivs.forEach(div => {
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            // Add these two lines to nudge it up
+            div.style.position = 'relative';
+            div.style.top = '-10px'; // Nudges the text up from the center
+            div.style.justifyContent = 'center';
+            div.style.height = '100%'; // Ensure it uses the full cell height
+            div.style.padding = '5px'; // Add some padding
+        });
+
+        pageContainer.appendChild(clonedGrid);
+    }
+
+    // If analysis is visible, add it to the page
+    if (analysis) {
+        const analysisSpacer = document.createElement('div');
+        analysisSpacer.style.height = '30px';
+        pageContainer.appendChild(analysisSpacer);
+        pageContainer.appendChild(analysis.cloneNode(true));
+    }
+
+    // --- Generate PDF ---
+    document.body.appendChild(pageContainer);
+    const canvas = await html2canvas(pageContainer, { scale: 3, useCORS: true });
+    document.body.removeChild(pageContainer);
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.9);
+    const imgProps = pdf.getImageProperties(imgData);
+    const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    pdf.addImage(imgData, 'JPEG', 10, 20, pdfWidth, imgHeight);
+
+    // --- Save the final PDF ---
+    const inputName = word.replace(/\s+/g, '_') || 'analiza';
+    pdf.save(`kwadrat_magiczny_${inputName}.pdf`);
+
+    // Restore button state
+    if (pdfBtn) {
+        pdfBtn.textContent = 'Zapisz PDF';
+        pdfBtn.disabled = false;
+    }
 }
 </script>
 </body>
