@@ -7,6 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Include Chart.js library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Include jsPDF and html2canvas for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -133,6 +136,8 @@
                 const wordId = `word-${index}`;
                 createTableForWord(word, `Tabela wyliczeń G-NPS dla: ${word}`, wordId);
             });
+
+            // No global PDF button - each word will have its own
         }
 
         function createTableForWord(word, label, wordId) {
@@ -230,24 +235,55 @@
             tableContainer.appendChild(table);
             resultContainer.appendChild(tableContainer);
 
+            // --- PDF Button Section ---
+            const pdfButton = document.createElement('button');
+            pdfButton.textContent = 'Zapisz PDF';
+            pdfButton.className = 'bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-transform transform hover:scale-105';
+            pdfButton.dataset.wordId = wordId;
+            pdfButton.addEventListener('click', () => generatePDFForWord(word, resultContainer, wordId));
+
+            // PDF button container (initially not added to DOM - will be added in the chart section)
+            const pdfButtonContainer = document.createElement('div');
+            pdfButtonContainer.className = 'flex';
+            pdfButtonContainer.appendChild(pdfButton);
+
             // --- Chart Section ---
             const chartSection = document.createElement('div');
             chartSection.className = 'mt-6 text-center';
 
+            // Combined buttons container (for Wykres and Zapisz PDF buttons)
+            const combinedButtonsContainer = document.createElement('div');
+            combinedButtonsContainer.className = 'flex justify-center gap-4 mb-4';
+
+            // Chart button container
+            const chartButtonContainer = document.createElement('div');
+            chartButtonContainer.className = 'flex';
+
+            // Chart button
             const chartButton = document.createElement('button');
             chartButton.textContent = 'Wykres';
             chartButton.className = 'bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 active:bg-green-800 transition-transform transform hover:scale-105';
 
+            // Chart container
             const chartContainer = document.createElement('div');
             chartContainer.id = `chart-container-${wordId}`;
             chartContainer.className = 'mt-4 hidden'; // Initially hidden
 
-            chartSection.appendChild(chartButton);
+            // Add chart button to its container
+            chartButtonContainer.appendChild(chartButton);
+
+            // Add both button containers to the combined container
+            combinedButtonsContainer.appendChild(chartButtonContainer);
+            combinedButtonsContainer.appendChild(pdfButtonContainer);
+
+            // Add elements to chart section
+            chartSection.appendChild(combinedButtonsContainer);
             chartSection.appendChild(chartContainer);
             resultContainer.appendChild(chartSection);
 
             chartButton.addEventListener('click', () => {
                 const isHidden = chartContainer.classList.contains('hidden');
+
                 if (isHidden) {
                     // If chart doesn't exist, create it
                     if (!chartContainer.hasChildNodes()) {
@@ -255,9 +291,25 @@
                     }
                     chartContainer.classList.remove('hidden');
                     chartButton.textContent = 'Ukryj Wykres';
+
+                    // Create a new container for the PDF button below the chart
+                    const newPdfContainer = document.createElement('div');
+                    newPdfContainer.className = 'flex justify-center mt-4';
+                    newPdfContainer.id = `pdf-below-chart-${wordId}`;
+
+                    // Move PDF button below the chart
+                    chartContainer.after(newPdfContainer);
+                    newPdfContainer.appendChild(pdfButton);
                 } else {
                     chartContainer.classList.add('hidden');
                     chartButton.textContent = 'Wykres';
+
+                    // Move PDF button back to the combined buttons container
+                    const belowChartContainer = document.getElementById(`pdf-below-chart-${wordId}`);
+                    if (belowChartContainer) {
+                        pdfButtonContainer.appendChild(pdfButton);
+                        belowChartContainer.remove();
+                    }
                 }
             });
         }
@@ -353,6 +405,136 @@
                 cycleInfo.innerHTML = `<span class="text-gray-600">Cykl stagnacyjny ${firstLetterSoma} &rarr; ${lastLetterSoma}</span>`;
             }
             container.appendChild(cycleInfo);
+        }
+
+        // Function to generate PDF for a specific word
+        async function generatePDFForWord(word, resultContainer, wordId) {
+            // Find the PDF button for this word using the data-word-id attribute
+            // This works regardless of where the button is currently positioned
+            const pdfButton = document.querySelector(`button[data-word-id="${wordId}"]`);
+            const originalText = pdfButton.textContent;
+            pdfButton.textContent = 'Generowanie PDF...';
+            pdfButton.disabled = true;
+
+            try {
+                // Initialize jsPDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const margin = 10; // margin in mm
+
+                // Find table in this container
+                const tableContainer = resultContainer.querySelector('div:first-child');
+
+                if (tableContainer) {
+                    // Capture table as canvas
+                    const tableCanvas = await html2canvas(tableContainer, {
+                        scale: 3, // Adjust quality if needed
+                        logging: false,
+                        useCORS: true
+                    });
+
+                    // Set desired width as a percentage of page width
+                    const widthPercentage = 0.8; // 80% of page width
+                    const imgWidth = pageWidth * widthPercentage;
+                    const imgHeight = (tableCanvas.height * imgWidth) / tableCanvas.width;
+
+                    // Center the table horizontally
+                    const xOffset = (pageWidth - imgWidth) / 2;
+                    // Position vertically
+                    const yOffset = margin;
+
+                    // Add table image to PDF
+                    const tableImgData = tableCanvas.toDataURL('image/jpeg', 0.95);
+                    doc.addImage(tableImgData, 'JPEG', xOffset, yOffset, imgWidth, imgHeight);
+
+                    // Find chart container for this word
+                    const chartSection = resultContainer.querySelector('div.mt-6.text-center');
+                    const chartContainer = chartSection.querySelector(`div#chart-container-${wordId}`);
+
+                    // Check if chart is visible (not hidden)
+                    const wasHidden = chartContainer.classList.contains('hidden');
+
+                    // Only include chart in PDF if it's not hidden or has been manually shown by user
+                    if (!wasHidden) {
+                        // Chart is already visible, just capture it
+                        // Wait a moment for chart to render
+                        await new Promise(resolve => setTimeout(resolve, 100));
+
+                        // Add extra padding to the bottom of the chart container to ensure the note is fully captured
+                        const originalPadding = chartContainer.style.paddingBottom;
+                        chartContainer.style.paddingBottom = '20px'; // Add 20px padding at the bottom
+
+                        // Capture chart as canvas
+                        const chartCanvas = await html2canvas(chartContainer, {
+                            scale: 2,
+                            logging: false,
+                            useCORS: true
+                        });
+
+                        // Restore original padding
+                        chartContainer.style.paddingBottom = originalPadding;
+
+                        // Set desired width as a percentage of page width (same as table)
+                        const chartImgWidth = pageWidth * widthPercentage;
+                        const chartImgHeight = (chartCanvas.height * chartImgWidth) / chartCanvas.width;
+
+                        // Center the chart horizontally (same as table)
+                        const chartXOffset = (pageWidth - chartImgWidth) / 2;
+
+                        // Calculate if there's enough space on the current page for both table and chart
+                        const tableBottom = yOffset + imgHeight;
+                        const availableHeightOnCurrentPage = pageHeight - tableBottom - margin;
+
+                        // Declare variables outside the if/else blocks
+                        let chartYOffset;
+                        let availableHeight;
+
+                        // If there's not enough space for the chart on the current page, add a new page
+                        if (availableHeightOnCurrentPage < chartImgHeight) {
+                            // Add new page for chart
+                            doc.addPage();
+                            // Position vertically at the top of the new page with margin
+                            chartYOffset = margin;
+                            // Calculate available height on the new page
+                            availableHeight = pageHeight - (2 * margin);
+                        } else {
+                            // There's enough space, position the chart below the table with some spacing
+                            chartYOffset = tableBottom + 10; // 10mm spacing between table and chart
+                            // Calculate remaining available height
+                            availableHeight = pageHeight - chartYOffset - margin;
+                        }
+
+                        // If the chart is too tall, scale it down to fit with extra space for the note
+                        let finalChartHeight = chartImgHeight;
+                        if (chartImgHeight > availableHeight * 0.85) { // Leave 15% of available height for the note
+                            finalChartHeight = availableHeight * 0.85;
+                        }
+
+                        // Add chart image to PDF
+                        const chartImgData = chartCanvas.toDataURL('image/jpeg', 0.95);
+                        doc.addImage(chartImgData, 'JPEG', chartXOffset, chartYOffset, chartImgWidth, finalChartHeight);
+                    }
+                }
+
+                // Save the PDF with the word as filename
+                const filename = `numerologia_${word.replace(/\s+/g, '_')}.pdf`;
+                doc.save(filename);
+
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert('Wystąpił błąd podczas generowania PDF. Spróbuj ponownie.');
+            } finally {
+                // Restore button state
+                pdfButton.textContent = originalText;
+                pdfButton.disabled = false;
+            }
+        }
+
+        // Legacy function kept for compatibility
+        async function generatePDF() {
+            alert('Ta funkcja została zastąpiona przez indywidualne przyciski "Zapisz PDF" dla każdego słowa.');
         }
 
         // Inicjalizacja aplikacji po załadowaniu strony
