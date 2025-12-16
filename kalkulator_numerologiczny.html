@@ -33,6 +33,37 @@
             border-collapse: collapse;
             width: 100%;
         }
+        /* Dodatkowe style dla drugiej tabeli (analiza samogłosek/spółgłosek) */
+        .cycles-table {
+            width: 100%;
+            max-width: 600px;
+            margin: 1.5rem auto 0 auto;
+            border-collapse: collapse;
+            font-size: 1rem;
+            opacity: 0;
+            animation: fadeIn 0.6s 0.3s ease-out forwards;
+        }
+        .cycles-table th, .cycles-table td {
+            border: 1px solid #e2e8f0;
+            padding: 0.85rem 1rem;
+            text-align: center;
+        }
+        .cycles-table th {
+            background-color: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .cycles-table td:first-child {
+            text-align: center;
+            font-weight: 500;
+            color: #2d3748;
+        }
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -109,6 +140,86 @@
 
         function sumDigits(n) {
             return String(n).split('').reduce((acc, digit) => acc + parseInt(digit, 10), 0);
+        }
+
+        // --- Dodatkowa logika: analiza samogłosek i spółgłosek wg mapy 1–9 ---
+        // Mapowanie liter (w tym polskie znaki) na wartości 1–9, zgodnie z przekazanym kodem
+        const simpleLetterValues = {
+            'A': 1, 'Ą': 1, 'J': 1, 'S': 1, 'Ś': 1,
+            'B': 2, 'K': 2, 'T': 2,
+            'C': 3, 'Ć': 3, 'L': 3, 'Ł': 3, 'U': 3,
+            'D': 4, 'M': 4, 'V': 4,
+            'E': 5, 'Ę': 5, 'N': 5, 'Ń': 5, 'W': 5,
+            'F': 6, 'O': 6, 'Ó': 6, 'X': 6,
+            'G': 7, 'P': 7, 'Y': 7,
+            'H': 8, 'Q': 8, 'Z': 8, 'Ź': 8, 'Ż': 8,
+            'I': 9, 'R': 9
+        };
+        const vowelsPL = ['A', 'Ą', 'E', 'Ę', 'I', 'O', 'Ó', 'U', 'Y'];
+
+        function reduceNumberToFinal(num) {
+            let currentNum = num;
+            while (currentNum > 9) {
+                if ([11, 22, 33, 44].includes(currentNum)) {
+                    break;
+                }
+                currentNum = String(currentNum).split('').reduce((acc, d) => acc + parseInt(d, 10), 0);
+            }
+            return currentNum;
+        }
+
+        function analyzeNameSimple(name) {
+            const consonants = { letters: [], values: [], soma: 0, suma: 0 };
+            const vowelsData = { letters: [], values: [], soma: 0, suma: 0 };
+            const normalizedName = name.toUpperCase().replace(/[^A-ZĄĆĘŁŃÓŚŹŻ]/g, '');
+            for (const letter of normalizedName) {
+                const value = simpleLetterValues[letter];
+                if (value === undefined) continue;
+                if (vowelsPL.includes(letter)) {
+                    vowelsData.letters.push(letter);
+                    vowelsData.values.push(value);
+                    vowelsData.soma += value;
+                } else {
+                    consonants.letters.push(letter);
+                    consonants.values.push(value);
+                    consonants.soma += value;
+                }
+            }
+            consonants.suma = reduceNumberToFinal(consonants.soma);
+            vowelsData.suma = reduceNumberToFinal(vowelsData.soma);
+            return { consonants, vowelsData };
+        }
+
+        function generateNameTableHTMLSimple(analysis) {
+            const { consonants, vowelsData } = analysis;
+            return `
+            <div class="table-container" style="opacity:0; animation: fadeIn 0.6s 0.3s ease-out forwards;">
+                <table class="cycles-table" aria-label="Wyniki analizy numerologicznej samogłosek i spółgłosek">
+                    <thead>
+                        <tr>
+                            <th>Kategoria</th>
+                            <th>Litery</th>
+                            <th>Soma</th>
+                            <th>Suma</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Spółgłoski</td>
+                            <td>${consonants.letters.join(', ') || 'Brak'}</td>
+                            <td>${consonants.values.length > 0 ? `${consonants.values.join(', ')}` : '0'}</td>
+                            <td>${consonants.soma > 0 ? consonants.suma : '0'}</td>
+                        </tr>
+                        <tr>
+                            <td>Samogłoski</td>
+                            <td>${vowelsData.letters.join(', ') || 'Brak'}</td>
+                            <td>${vowelsData.values.length > 0 ? `${vowelsData.values.join(', ')}` : '0'}</td>
+                            <td>${vowelsData.soma > 0 ? vowelsData.suma : '0'}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            `;
         }
 
         function setupEventListeners() {
@@ -234,6 +345,20 @@
             tableContainer.appendChild(tableLabel);
             tableContainer.appendChild(table);
             resultContainer.appendChild(tableContainer);
+
+            // --- Druga tabela: analiza samogłosek i spółgłosek (wg mapy 1–9) ---
+            const secondTableSection = document.createElement('div');
+            secondTableSection.className = 'mt-6';
+            const secondTableLabel = document.createElement('h3');
+            secondTableLabel.className = 'text-xl font-semibold mb-2 text-center text-gray-800';
+            secondTableLabel.textContent = `Analiza samogłosek i spółgłosek dla: ${word}`;
+            const analysisResultsSimple = analyzeNameSimple(word);
+            const secondTableHTML = generateNameTableHTMLSimple(analysisResultsSimple);
+            const secondTableWrapper = document.createElement('div');
+            secondTableWrapper.innerHTML = secondTableHTML;
+            secondTableSection.appendChild(secondTableLabel);
+            secondTableSection.appendChild(secondTableWrapper);
+            resultContainer.appendChild(secondTableSection);
 
             // --- PDF Button Section ---
             const pdfButton = document.createElement('button');
