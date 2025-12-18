@@ -12,47 +12,226 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gradient-to-b from-slate-50 to-gray-100 text-slate-800 antialiased">
 
-    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-4xl">
-        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+    <div class="container mx-auto p-4 sm:p-6 md:p-10 max-w-5xl">
+        <div class="bg-white/90 backdrop-blur-sm p-6 sm:p-8 rounded-2xl shadow-xl ring-1 ring-black/5">
 
             <!-- Nagłówek -->
-            <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-10">Numerologia</h1>
-
-            <!-- Sekcja z przyciskami do podstron -->
-            <div class="flex flex-col items-center gap-6 mb-8">
-                <a href="kalkulator_numerologiczny.html" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-transform transform hover:scale-105 w-64 text-center">
-                    Kalkulator Numerologiczny
-                </a>
-                <a href="kwadrat_pitagorejski.html" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-transform transform hover:scale-105 w-64 text-center">
-                    Kwadrat Pitagorejski
-                </a>
-                <a href="kwadrat_magiczny.html" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-transform transform hover:scale-105 w-64 text-center">
-                    Kwadrat Magiczny
-                </a>
-                <a href="analiza_daty_urodzenia.html" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-transform transform hover:scale-105 w-64 text-center">
-                    Analiza daty urodzenia
-                </a>
-                <a href="baza_wiedzy.html" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition-transform transform hover:scale-105 w-64 text-center">
-                    Baza wiedzy
-                </a>
-                <!-- Tutaj w przyszłości będą dodawane kolejne przyciski do innych podstron -->
+            <div class="relative overflow-hidden rounded-t-2xl -mx-6 sm:-mx-8 px-6 sm:px-8 pt-7 sm:pt-9 pb-6">
+                <div class="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500"></div>
+                <div class="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-indigo-300/30 blur-3xl"></div>
+                <div class="relative flex flex-col items-center text-center">
+                    <span class="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100 px-3 py-1 text-xs font-medium">Narzędzia • Analizy • Wiedza</span>
+                    <h1 class="mt-4 text-3xl sm:text-4xl font-bold text-gray-900">Aplikacja do Numerologii</h1>
+                    <p class="mt-2 max-w-2xl text-sm sm:text-base text-gray-600">Szybko policz kluczowe wibracje, sprawdź kwadraty i poznaj znaczenia liczb — w jednym miejscu.</p>
+                </div>
             </div>
 
-            <!-- Opis sekcji -->
-            <div class="mt-12 text-center text-gray-600">
-                <p>Aplikacja do analizy numerologicznej.</p>
-                <!--<p class="mt-2">W przyszłości pojawią się tutaj kolejne narzędzia numerologiczne.</p> -->
-            </div>
 
-            <!-- Logo na dole strony -->
-            <div class="mt-8 text-center">
-                <img src="sth-logo.png" alt="STH Logo" class="mx-auto h-16">
+            <div class="space-y-10">
+                <!-- Sekcja: Najczęściej używane -->
+                <section aria-label="Kalkulator">
+                    <div class="flex justify-center">
+                        <!-- Primary CTA: Kalkulator Numerologiczny -->
+                        <a href="kalkulator_numerologiczny.html" class="group relative w-full max-w-2xl rounded-2xl border border-blue-200 bg-blue-600 text-white shadow-lg shadow-blue-200/40 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-300/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:translate-y-px transition-all duration-200 p-5 sm:p-6">
+                            <div class="flex items-start gap-4">
+                                <!-- Icon -->
+                                <div class="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-7 w-7">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5h18M3 12h18M3 19h18"/>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-xl sm:text-2xl font-semibold tracking-tight">Kalkulator Numerologiczny</h3>
+                                    <p class="mt-1 text-sm sm:text-base text-blue-50/90 max-w-prose">Analiza imienia i nazwiska (G/N/P/S)</p>
+                                </div>
+                                <div class="self-center text-white/70 group-hover:text-white transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-6 w-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Sekcja: Kwadraty -->
+                <section aria-labelledby="kwadraty">
+                    <h2 id="kwadraty" class="text-xl sm:text-2xl font-semibold text-center text-gray-900">Kwadraty</h2>
+                    <div class="w-16 h-px bg-gray-200 mx-auto mt-3 mb-6"></div>
+                    <div class="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8">
+                    <!-- Kwadrat Pitagorejski -->
+                    <a href="kwadrat_pitagorejski.html" class="group w-full sm:w-80 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:translate-y-px">
+                        <div class="flex items-start gap-4">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-blue-100 group-hover:bg-blue-100/70 group-hover:text-blue-700 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-7 w-7">
+                                    <rect x="4" y="4" width="16" height="16" rx="2" ry="2" stroke-width="1.5"/>
+                                    <path d="M12 4v16M4 12h16" stroke-width="1.5"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900">Kwadrat Pitagorejski</h3>
+                            </div>
+                            <div class="self-center text-gray-300 group-hover:text-blue-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-5 w-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Kwadrat Magiczny -->
+                    <a href="kwadrat_magiczny.html" class="group w-full sm:w-80 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:translate-y-px">
+                        <div class="flex items-start gap-4">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-50 text-violet-600 ring-1 ring-violet-100 group-hover:bg-violet-100/70 group-hover:text-violet-700 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-7 w-7">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v18M3 12h18"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900">Kwadrat Magiczny</h3>
+                            </div>
+                            <div class="self-center text-gray-300 group-hover:text-violet-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-5 w-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </a>
+                    </div>
+                </section>
+
+                <!-- Sekcja: Analiza Daty Urodzenia -->
+                <section aria-labelledby="analiza-daty-urodzenia">
+                    <h2 id="analiza-daty-urodzenia" class="text-xl sm:text-2xl font-semibold text-center text-gray-900">Analiza Daty Urodzenia</h2>
+                    <div class="w-16 h-px bg-gray-200 mx-auto mt-3 mb-6"></div>
+                    <div class="flex justify-center">
+                    <!-- Analiza daty urodzenia -->
+                    <a href="analiza_daty_urodzenia.html" class="group w-full sm:w-80 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:translate-y-px">
+                        <div class="flex items-start gap-4">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100 group-hover:bg-emerald-100/70 group-hover:text-emerald-700 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-7 w-7">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h8M6 11h12M4 15h16"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900">Analiza daty urodzenia</h3>
+                            </div>
+                            <div class="self-center text-gray-300 group-hover:text-emerald-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-5 w-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </a>
+                    </div>
+                </section>
+
+                <!-- Sekcja: Wiedza -->
+                <section aria-labelledby="wiedza">
+                    <h2 id="wiedza" class="text-xl sm:text-2xl font-semibold text-center text-gray-900">Wiedza</h2>
+                    <div class="w-16 h-px bg-gray-200 mx-auto mt-3 mb-6"></div>
+                    <div class="flex justify-center">
+                    <!-- Baza wiedzy -->
+                    <a href="baza_wiedzy.html" class="group relative w-full sm:w-80 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:translate-y-px">
+                        <div class="absolute top-3 right-3 text-[11px] leading-none px-2 py-1 rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-100">Czytaj</div>
+                        <div class="flex items-start gap-4">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-100 group-hover:bg-amber-100/70 group-hover:text-amber-700 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-7 w-7">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h10"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900">Baza wiedzy</h3>
+                                <p class="mt-1 text-sm text-gray-600 max-w-prose">Znaczenia liczb i pojęć</p>
+                            </div>
+                            <div class="self-center text-gray-300 group-hover:text-amber-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-5 w-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </a>
+                    </div>
+                </section>
+
+                <!-- Stopka -->
+                <footer class="pt-6 border-t border-gray-200">
+                    <div class="text-center text-gray-500 text-sm">
+                        <p class="mb-4">Aplikacja do analizy numerologicznej</p>
+                        <img src="sth-logo.png" alt="STH logo" class="mx-auto h-12 opacity-90" />
+                    </div>
+                </footer>
             </div>
 
         </div>
     </div>
+
+    <script>
+        (function() {
+            const LAST_KEY = 'numerologia:lastTool';
+            const LAST_LABEL_KEY = 'numerologia:lastToolLabel';
+
+            function safeGet(key) {
+                try { return window.localStorage.getItem(key); } catch (e) { return null; }
+            }
+            function safeSet(key, val) {
+                try { window.localStorage.setItem(key, val); } catch (e) { /* ignore */ }
+            }
+
+            // Zapis ostatnio klikniętego narzędzia (tylko na index.html)
+            document.querySelectorAll('a[href$=".html"]').forEach(function(a){
+                a.addEventListener('click', function() {
+                    const href = a.getAttribute('href');
+                    // Nie zapisujemy jeśli to link na tę stronę
+                    if (!href || href === 'index.html') return;
+                    const labelEl = a.querySelector('h3');
+                    const label = labelEl ? labelEl.textContent.trim() : a.textContent.trim();
+                    safeSet(LAST_KEY, href);
+                    safeSet(LAST_LABEL_KEY, label || href);
+                }, { passive: true });
+            });
+
+            // Render sekcji "Kontynuuj"
+            const lastHref = safeGet(LAST_KEY);
+            const lastLabel = safeGet(LAST_LABEL_KEY);
+            const wrapper = document.getElementById('recent-wrapper');
+            const container = document.getElementById('recently-used');
+            const placeholder = document.getElementById('recent-placeholder');
+
+            if (lastHref && lastLabel) {
+                wrapper.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                const link = document.createElement('a');
+                link.href = lastHref;
+                link.className = 'inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 px-3 py-1.5 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2';
+                link.setAttribute('aria-label', 'Kontynuuj: ' + lastLabel);
+
+                const labelSpan = document.createElement('span');
+                labelSpan.textContent = lastLabel;
+                const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                icon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                icon.setAttribute('viewBox', '0 0 24 24');
+                icon.setAttribute('fill', 'none');
+                icon.setAttribute('stroke', 'currentColor');
+                icon.setAttribute('class', 'h-4 w-4 text-gray-500');
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('stroke-linecap', 'round');
+                path.setAttribute('stroke-linejoin', 'round');
+                path.setAttribute('stroke-width', '1.5');
+                path.setAttribute('d', 'M9 5l7 7-7 7');
+                icon.appendChild(path);
+
+                link.appendChild(labelSpan);
+                link.appendChild(icon);
+                container.appendChild(link);
+            } else {
+                // brak zapisanych danych
+                placeholder.classList.remove('hidden');
+            }
+        })();
+    </script>
 
 </body>
 </html>
