@@ -142,20 +142,23 @@
             return String(n).split('').reduce((acc, digit) => acc + parseInt(digit, 10), 0);
         }
 
+        // --- Normalizacja greckich liter: usunięcie akcentów i unifikacja wariantów ---
+        // Umożliwia dopasowanie do kluczy w letterValues.json (bez znaków diakrytycznych)
+        function normalizeGreek(text) {
+            return text
+                .normalize('NFD')                 // rozbij litera + znaki łączące
+                .replace(/[\u0300-\u036f]/g, '') // usuń diakrytyki (tonos/dialytika)
+                .replace(/ς/g, 'σ')               // sigma końcowa → sigma
+                .replace(/Ϊ/g, 'Ι').replace(/ϊ/g, 'ι')
+                .replace(/Ϋ/g, 'Υ').replace(/ϋ/g, 'υ');
+        }
+
         // --- Dodatkowa logika: analiza samogłosek i spółgłosek wg mapy 1–9 ---
-        // Mapowanie liter (w tym polskie znaki) na wartości 1–9, zgodnie z przekazanym kodem
-        const simpleLetterValues = {
-            'A': 1, 'Ą': 1, 'J': 1, 'S': 1, 'Ś': 1,
-            'B': 2, 'K': 2, 'T': 2,
-            'C': 3, 'Ć': 3, 'L': 3, 'Ł': 3, 'U': 3,
-            'D': 4, 'M': 4, 'V': 4,
-            'E': 5, 'Ę': 5, 'N': 5, 'Ń': 5, 'W': 5,
-            'F': 6, 'O': 6, 'Ó': 6, 'X': 6,
-            'G': 7, 'P': 7, 'Y': 7,
-            'H': 8, 'Q': 8, 'Z': 8, 'Ź': 8, 'Ż': 8,
-            'I': 9, 'R': 9
-        };
+        // UŻYWAJ wartości Soma z letterValues.json, aby objąć także grecki i rosyjski alfabet
+        // Zestaw samogłosek dla jęz. polskiego (łacińskie), greckiego i rosyjskiego (cyrylica)
         const vowelsPL = ['A', 'Ą', 'E', 'Ę', 'I', 'O', 'Ó', 'U', 'Y'];
+        const vowelsGR = ['Α', 'Ε', 'Η', 'Ι', 'Ο', 'Υ', 'Ω'];
+        const vowelsRU = ['А', 'Е', 'Ё', 'И', 'О', 'У', 'Ы', 'Э', 'Ю', 'Я'];
 
         function reduceNumberToFinal(num) {
             let currentNum = num;
@@ -171,11 +174,22 @@
         function analyzeNameSimple(name) {
             const consonants = { letters: [], values: [], soma: 0, suma: 0 };
             const vowelsData = { letters: [], values: [], soma: 0, suma: 0 };
-            const normalizedName = name.toUpperCase().replace(/[^A-ZĄĆĘŁŃÓŚŹŻ]/g, '');
+            // Zachowaj polskie, greckie i rosyjskie litery; usuń diakrytyki oraz unifikuj grecki końcowy sigma
+            const normalizedName = name
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/ς/g, 'σ')
+                .toUpperCase()
+                // Dozwolone zakresy: łaciński (A-Z + polskie), grecki (0370–03FF), cyrylica (0400–04FF)
+                .replace(/[^A-ZĄĆĘŁŃÓŚŹŻ\u0370-\u03FF\u0400-\u04FF]/g, '');
             for (const letter of normalizedName) {
-                const value = simpleLetterValues[letter];
+                // Wartość bierzemy z pełnej mapy letterValues.json (pole Soma 1–9)
+                const value = letterToValues[letter]?.Soma;
                 if (value === undefined) continue;
-                if (vowelsPL.includes(letter)) {
+                const isPolishVowel = vowelsPL.includes(letter);
+                const isGreekVowel = vowelsGR.includes(letter);
+                const isRussianVowel = vowelsRU.includes(letter);
+                if (isPolishVowel || isGreekVowel || isRussianVowel) {
                     vowelsData.letters.push(letter);
                     vowelsData.values.push(value);
                     vowelsData.soma += value;
@@ -192,6 +206,9 @@
 
         function generateNameTableHTMLSimple(analysis) {
             const { consonants, vowelsData } = analysis;
+            // Ensure letters are displayed in lower case in the table
+            const consonantLettersDisplay = consonants.letters.map(l => l.toLowerCase()).join(', ');
+            const vowelLettersDisplay = vowelsData.letters.map(l => l.toLowerCase()).join(', ');
             return `
             <div class="table-container" style="opacity:0; animation: fadeIn 0.6s 0.3s ease-out forwards;">
                 <table class="cycles-table" aria-label="Wyniki analizy numerologicznej samogłosek i spółgłosek">
@@ -206,13 +223,13 @@
                     <tbody>
                         <tr>
                             <td>Spółgłoski</td>
-                            <td>${consonants.letters.join(', ') || 'Brak'}</td>
+                            <td>${consonants.letters.length > 0 ? consonantLettersDisplay : 'Brak'}</td>
                             <td>${consonants.values.length > 0 ? `${consonants.values.join(', ')}` : '0'}</td>
                             <td>${consonants.soma > 0 ? consonants.suma : '0'}</td>
                         </tr>
                         <tr>
                             <td>Samogłoski</td>
-                            <td>${vowelsData.letters.join(', ') || 'Brak'}</td>
+                            <td>${vowelsData.letters.length > 0 ? vowelLettersDisplay : 'Brak'}</td>
                             <td>${vowelsData.values.length > 0 ? `${vowelsData.values.join(', ')}` : '0'}</td>
                             <td>${vowelsData.soma > 0 ? vowelsData.suma : '0'}</td>
                         </tr>
@@ -278,9 +295,14 @@
                 headerRow.appendChild(th);
             });
             const tbody = table.createTBody();
-            for (const char of word) {
-                if (char === ' ') continue;
-                const values = letterToValues[char];
+            // Używamy oryginalnych znaków do wyświetlania, ale znormalizowanych do wyszukiwania wartości
+            const originalChars = [...word];
+            const lookupChars = [...normalizeGreek(word)];
+            for (let i = 0; i < lookupChars.length; i++) {
+                const displayChar = originalChars[i];
+                const lookupChar = lookupChars[i];
+                if (displayChar === ' ') continue;
+                const values = letterToValues[lookupChar];
                 let gematrikon = 'N/A', nous = 'N/A', psyche = 'N/A', soma = 'N/A';
                 if (values) {
                     gematrikon = values.Gematrikon; nous = values.Nous; psyche = values.Psyche; soma = values.Soma;
@@ -289,7 +311,7 @@
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td class="px-4 py-3 border-b border-gray-200">${gematrikon}</td>
-                    <td class="px-4 py-3 border-b border-gray-300 font-mono font-bold bg-gray-200">${char}</td>
+                    <td class="px-4 py-3 border-b border-gray-300 font-mono font-bold bg-gray-200">${displayChar}</td>
                     <td class="px-4 py-3 border-b border-gray-200">${nous}</td>
                     <td class="px-4 py-3 border-b border-gray-200">${psyche}</td>
                     <td class="px-4 py-3 border-b border-gray-200">${soma}</td>
@@ -347,18 +369,62 @@
             resultContainer.appendChild(tableContainer);
 
             // --- Druga tabela: analiza samogłosek i spółgłosek (wg mapy 1–9) ---
+            // Kontener pod główną tabelą z przyciskiem toggle i ukrywaną sekcją
             const secondTableSection = document.createElement('div');
             secondTableSection.className = 'mt-6';
+
+            // Przygotowanie unikalnych identyfikatorów per słowo, aby uniknąć kolizji
+            const analysisContainerId = `analysis-container-${wordId}`;
+
+            // Przycisk togglujący widoczność analizy
+            const toggleAnalysisBtn = document.createElement('button');
+            toggleAnalysisBtn.type = 'button';
+            toggleAnalysisBtn.className = 'mt-2 inline-flex items-center justify-center bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition';
+            toggleAnalysisBtn.textContent = 'Analiza samogłosek i spółgłosek';
+            toggleAnalysisBtn.setAttribute('aria-expanded', 'false');
+            toggleAnalysisBtn.setAttribute('aria-controls', analysisContainerId);
+
+            // Wrapper wyśrodkowujący przycisk
+            const toggleBtnWrapper = document.createElement('div');
+            toggleBtnWrapper.className = 'flex justify-center';
+            toggleBtnWrapper.appendChild(toggleAnalysisBtn);
+
+            // Ukryty na start kontener z analizą (karta)
+            const analysisContainer = document.createElement('div');
+            analysisContainer.id = analysisContainerId;
+            analysisContainer.className = 'hidden mt-3 rounded-lg border border-gray-200 bg-gray-50 shadow-sm p-4';
+
+            // Nagłówek sekcji wewnątrz karty
             const secondTableLabel = document.createElement('h3');
-            secondTableLabel.className = 'text-xl font-semibold mb-2 text-center text-gray-800';
+            secondTableLabel.className = 'text-lg font-semibold mb-3 text-gray-900 text-center';
             secondTableLabel.textContent = `Analiza samogłosek i spółgłosek dla: ${word}`;
+
+            // Generowanie tabeli analizy
             const analysisResultsSimple = analyzeNameSimple(word);
             const secondTableHTML = generateNameTableHTMLSimple(analysisResultsSimple);
             const secondTableWrapper = document.createElement('div');
             secondTableWrapper.innerHTML = secondTableHTML;
-            secondTableSection.appendChild(secondTableLabel);
-            secondTableSection.appendChild(secondTableWrapper);
+
+            // Złożenie elementów i dodanie do DOM: wyśrodkowany przycisk, a pod nim (ukryta) karta z analizą
+            analysisContainer.appendChild(secondTableLabel);
+            analysisContainer.appendChild(secondTableWrapper);
+            secondTableSection.appendChild(toggleBtnWrapper);
+            secondTableSection.appendChild(analysisContainer);
             resultContainer.appendChild(secondTableSection);
+
+            // Logika togglowania widoczności analizy samogł./spółgł. niezależnie od wykresu/PDF
+            toggleAnalysisBtn.addEventListener('click', () => {
+                const isHidden = analysisContainer.classList.contains('hidden');
+                if (isHidden) {
+                    analysisContainer.classList.remove('hidden');
+                    toggleAnalysisBtn.textContent = 'Ukryj analizę samogłosek i spółgłosek';
+                    toggleAnalysisBtn.setAttribute('aria-expanded', 'true');
+                } else {
+                    analysisContainer.classList.add('hidden');
+                    toggleAnalysisBtn.textContent = 'Analiza samogłosek i spółgłosek';
+                    toggleAnalysisBtn.setAttribute('aria-expanded', 'false');
+                }
+            });
 
             // --- PDF Button Section ---
             const pdfButton = document.createElement('button');
@@ -448,8 +514,9 @@
             const canvas = document.createElement('canvas');
             container.appendChild(canvas);
 
-            const labels = word.split('');
-            const dataPoints = labels.map(char => letterToValues[char]?.Soma || 0);
+            const labels = [...word];
+            const lookupChars = [...normalizeGreek(word)];
+            const dataPoints = lookupChars.map(ch => letterToValues[ch]?.Soma || 0);
 
             const ctx = canvas.getContext('2d');
             chartInstances[wordId] = new Chart(ctx, {
@@ -574,72 +641,102 @@
                     const tableImgData = tableCanvas.toDataURL('image/jpeg', 0.95);
                     doc.addImage(tableImgData, 'JPEG', xOffset, yOffset, imgWidth, imgHeight);
 
-                    // Find chart container for this word
+                    // Keep track of current vertical position on the page
+                    let cursorY = yOffset + imgHeight + 10; // 10mm spacing after main table
+
+                    // --- Include "Analiza samogłosek i spółgłosek" if visible ---
+                    const analysisContainer = document.getElementById(`analysis-container-${wordId}`);
+                    if (analysisContainer && !analysisContainer.classList.contains('hidden')) {
+                        // Give the browser a tiny moment (in case the user just toggled it)
+                        await new Promise(resolve => setTimeout(resolve, 50));
+
+                        // FIX: The analysis table uses fade-in animation (opacity:0 -> 1).
+                        // When html2canvas runs too early, it captures it as transparent.
+                        // Temporarily force full visibility and disable animations for capture.
+                        const elemsToForce = analysisContainer.querySelectorAll('.table-container, .cycles-table');
+                        const previousInline = [];
+                        elemsToForce.forEach(el => {
+                            previousInline.push({
+                                el,
+                                opacity: el.style.opacity,
+                                animation: el.style.animation,
+                                transform: el.style.transform,
+                            });
+                            el.style.opacity = '1';
+                            el.style.animation = 'none';
+                            el.style.transform = 'none';
+                        });
+
+                        // Ensure styles are applied before snapshot
+                        await new Promise(requestAnimationFrame);
+
+                        const analysisCanvas = await html2canvas(analysisContainer, {
+                            scale: 2,
+                            logging: false,
+                            useCORS: true,
+                            backgroundColor: '#ffffff',
+                        });
+
+                        // Restore previous inline styles
+                        previousInline.forEach(({ el, opacity, animation, transform }) => {
+                            el.style.opacity = opacity;
+                            el.style.animation = animation;
+                            el.style.transform = transform;
+                        });
+
+                        const analysisImgWidth = pageWidth * widthPercentage;
+                        const analysisImgHeight = (analysisCanvas.height * analysisImgWidth) / analysisCanvas.width;
+                        const analysisXOffset = (pageWidth - analysisImgWidth) / 2;
+
+                        // New page if not enough space
+                        if (cursorY + analysisImgHeight + margin > pageHeight) {
+                            doc.addPage();
+                            cursorY = margin;
+                        }
+
+                        const analysisImgData = analysisCanvas.toDataURL('image/jpeg', 0.95);
+                        doc.addImage(analysisImgData, 'JPEG', analysisXOffset, cursorY, analysisImgWidth, analysisImgHeight);
+                        cursorY += analysisImgHeight + 10; // spacing after analysis
+                    }
+
+                    // --- Include chart if visible ---
                     const chartSection = resultContainer.querySelector('div.mt-6.text-center');
-                    const chartContainer = chartSection.querySelector(`div#chart-container-${wordId}`);
+                    const chartContainer = chartSection?.querySelector(`div#chart-container-${wordId}`);
+                    const chartIsHidden = !chartContainer || chartContainer.classList.contains('hidden');
 
-                    // Check if chart is visible (not hidden)
-                    const wasHidden = chartContainer.classList.contains('hidden');
-
-                    // Only include chart in PDF if it's not hidden or has been manually shown by user
-                    if (!wasHidden) {
-                        // Chart is already visible, just capture it
-                        // Wait a moment for chart to render
+                    if (!chartIsHidden) {
                         await new Promise(resolve => setTimeout(resolve, 100));
 
-                        // Add extra padding to the bottom of the chart container to ensure the note is fully captured
                         const originalPadding = chartContainer.style.paddingBottom;
-                        chartContainer.style.paddingBottom = '20px'; // Add 20px padding at the bottom
+                        chartContainer.style.paddingBottom = '20px';
 
-                        // Capture chart as canvas
                         const chartCanvas = await html2canvas(chartContainer, {
                             scale: 2,
                             logging: false,
                             useCORS: true
                         });
 
-                        // Restore original padding
                         chartContainer.style.paddingBottom = originalPadding;
 
-                        // Set desired width as a percentage of page width (same as table)
                         const chartImgWidth = pageWidth * widthPercentage;
-                        const chartImgHeight = (chartCanvas.height * chartImgWidth) / chartCanvas.width;
-
-                        // Center the chart horizontally (same as table)
+                        let chartImgHeight = (chartCanvas.height * chartImgWidth) / chartCanvas.width;
                         const chartXOffset = (pageWidth - chartImgWidth) / 2;
 
-                        // Calculate if there's enough space on the current page for both table and chart
-                        const tableBottom = yOffset + imgHeight;
-                        const availableHeightOnCurrentPage = pageHeight - tableBottom - margin;
+                        // If the chart is too tall to fit on a fresh page, scale it down to fit page height
+                        const maxHeightPerPage = pageHeight - 2 * margin;
+                        if (chartImgHeight > maxHeightPerPage) {
+                            chartImgHeight = maxHeightPerPage;
+                        }
 
-                        // Declare variables outside the if/else blocks
-                        let chartYOffset;
-                        let availableHeight;
-
-                        // If there's not enough space for the chart on the current page, add a new page
-                        if (availableHeightOnCurrentPage < chartImgHeight) {
-                            // Add new page for chart
+                        // New page if not enough space on current one
+                        if (cursorY + chartImgHeight + margin > pageHeight) {
                             doc.addPage();
-                            // Position vertically at the top of the new page with margin
-                            chartYOffset = margin;
-                            // Calculate available height on the new page
-                            availableHeight = pageHeight - (2 * margin);
-                        } else {
-                            // There's enough space, position the chart below the table with some spacing
-                            chartYOffset = tableBottom + 10; // 10mm spacing between table and chart
-                            // Calculate remaining available height
-                            availableHeight = pageHeight - chartYOffset - margin;
+                            cursorY = margin;
                         }
 
-                        // If the chart is too tall, scale it down to fit with extra space for the note
-                        let finalChartHeight = chartImgHeight;
-                        if (chartImgHeight > availableHeight * 0.85) { // Leave 15% of available height for the note
-                            finalChartHeight = availableHeight * 0.85;
-                        }
-
-                        // Add chart image to PDF
                         const chartImgData = chartCanvas.toDataURL('image/jpeg', 0.95);
-                        doc.addImage(chartImgData, 'JPEG', chartXOffset, chartYOffset, chartImgWidth, finalChartHeight);
+                        doc.addImage(chartImgData, 'JPEG', chartXOffset, cursorY, chartImgWidth, chartImgHeight);
+                        cursorY += chartImgHeight;
                     }
                 }
 
