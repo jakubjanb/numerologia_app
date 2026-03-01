@@ -20,12 +20,15 @@
     "2222": { "colorClass": "text-green-600" },
     "3333": { "colorClass": "text-green-600" },
     "4444": { "colorClass": "text-green-600" },
+
     "28": { "colorClass": "text-purple-600" },
     "496": { "colorClass": "text-purple-600" },
     "8128": { "colorClass": "text-purple-600" },
+
     "17": { "colorClass": "text-red-600" },
     "15": { "colorClass": "text-red-600" },
     "23": { "colorClass": "text-red-600" },
+    
     "217": { "colorClass": "text-red-600" },
     "660": { "colorClass": "text-red-600" },
     "606": { "colorClass": "text-red-600" },

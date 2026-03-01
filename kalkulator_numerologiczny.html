@@ -10,30 +10,150 @@
     <!-- Include jsPDF and html2canvas for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a2a2f 0%, #0f1a3d 40%, #0e1530 65%, #0a0a1a 100%);
         }
-        /* Style dla nagłówków tabeli */
-        th {
-            background-color: #f3f4f6; /* Jasnoszary */
-            font-weight: 600;
+
+        .font-cinzel {
+            font-family: 'Cinzel', serif;
         }
-        /* Wyśrodkowanie tekstu w komórkach */
-        td, th {
-            text-align: center;
-            padding: 0.75rem;
+
+        /* Page title gradient text — copper/bronze */
+        .title-gradient {
+            background: linear-gradient(135deg, #d4a574 0%, #c49a6c 40%, #b8895e 60%, #d4a574 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        /* Obramowanie tabeli */
-        table, th, td {
-            border: 1px solid #d1d5db; /* Średnioszary */
+
+        /* Copper divider */
+        .copper-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(196, 154, 108, 0.5), transparent);
         }
-        table {
+
+        /* Subtle background pattern — teal-tinted */
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(ellipse 600px 600px at 15% 50%, rgba(20, 100, 120, 0.1), transparent),
+                radial-gradient(ellipse 500px 500px at 85% 25%, rgba(30, 80, 140, 0.08), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Glass card — teal-tinted */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(196, 154, 108, 0.12);
+            border-radius: 0.75rem;
+        }
+
+        /* Fade-in animation */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            opacity: 0;
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+
+        /* =============================================
+           DARK THEME OVERRIDES FOR JS-GENERATED ELEMENTS
+           These use #resultsArea descendant selectors to
+           beat Tailwind utility class specificity.
+           ============================================= */
+
+        /* Main results table */
+        #resultsArea table {
+            background: rgba(10, 30, 40, 0.7);
+            border: 1px solid rgba(196, 154, 108, 0.2);
             border-collapse: collapse;
             width: 100%;
         }
-        /* Dodatkowe style dla drugiej tabeli (analiza samogłosek/spółgłosek) */
+
+        /* Table header cells — override bg-gray-100/bg-gray-200 */
+        #resultsArea th {
+            background-color: rgba(15, 35, 50, 0.9);
+            color: #d4a574;
+            border: 1px solid rgba(196, 154, 108, 0.2);
+            font-weight: 600;
+            text-align: center;
+            padding: 0.75rem;
+        }
+
+        /* Table body cells — override bg-gray-200, text colors, borders */
+        #resultsArea td {
+            background-color: rgba(10, 25, 35, 0.6);
+            color: #e2dcd5;
+            border: 1px solid rgba(196, 154, 108, 0.12);
+            text-align: center;
+            padding: 0.75rem;
+        }
+
+        /* Letter column highlight — override bg-gray-200 on Litery column */
+        #resultsArea td.bg-gray-200 {
+            background-color: rgba(20, 40, 55, 0.8);
+        }
+
+        /* Total row — override bg-gray-200 */
+        #resultsArea tfoot tr.bg-gray-200 {
+            background-color: rgba(196, 154, 108, 0.12);
+        }
+        #resultsArea tfoot tr.bg-gray-200 td {
+            background-color: transparent;
+            color: #e8ddd0;
+            font-weight: 700;
+        }
+
+        /* Reduction rows — override bg-gray-50 */
+        #resultsArea tfoot tr.bg-gray-50 {
+            background-color: rgba(10, 25, 35, 0.4);
+        }
+        #resultsArea tfoot tr.bg-gray-50 td {
+            background-color: transparent;
+            color: #c9bfb3;
+        }
+        #resultsArea tfoot tr.bg-gray-50 td.bg-gray-200 {
+            background-color: rgba(20, 40, 55, 0.5);
+        }
+
+        /* Table label h2 — override text-gray-800 */
+        #resultsArea h2.text-gray-800 {
+            color: #e8ddd0;
+        }
+
+        /* Shadow override on tables */
+        #resultsArea table.shadow-md {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Analysis container (vowels/consonants) --- */
+        /* Override bg-gray-50 and border-gray-200 on analysis container */
+        #resultsArea div.bg-gray-50 {
+            background-color: rgba(10, 30, 40, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-color: rgba(196, 154, 108, 0.15);
+        }
+
+        /* Analysis heading — override text-gray-900 */
+        #resultsArea h3.text-gray-900 {
+            color: #d4a574;
+        }
+
+        /* Cycles table (analysis of vowels/consonants) */
         .cycles-table {
             width: 100%;
             max-width: 600px;
@@ -44,62 +164,192 @@
             animation: fadeIn 0.6s 0.3s ease-out forwards;
         }
         .cycles-table th, .cycles-table td {
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(196, 154, 108, 0.18);
             padding: 0.85rem 1rem;
             text-align: center;
         }
         .cycles-table th {
-            background-color: #f7fafc;
+            background-color: rgba(15, 35, 50, 0.9);
             font-weight: 600;
-            color: #4a5568;
+            color: #d4a574;
+        }
+        .cycles-table td {
+            background-color: rgba(10, 25, 35, 0.6);
+            color: #e2dcd5;
         }
         .cycles-table td:first-child {
             text-align: center;
             font-weight: 500;
-            color: #2d3748;
+            color: #d4a574;
         }
+
         @keyframes fadeIn {
             to {
                 opacity: 1;
                 transform: scale(1);
             }
         }
+
+        /* --- Dynamically created buttons --- */
+        /* Toggle analysis button — override bg-indigo-600 */
+        #resultsArea button.bg-indigo-600 {
+            background: linear-gradient(135deg, rgba(196, 154, 108, 0.25), rgba(196, 154, 108, 0.1));
+            border: 1px solid rgba(196, 154, 108, 0.3);
+            color: #d4a574;
+            transition: all 0.3s ease;
+        }
+        #resultsArea button.bg-indigo-600:hover,
+        #resultsArea button.hover\:bg-indigo-700:hover {
+            background: linear-gradient(135deg, rgba(196, 154, 108, 0.35), rgba(196, 154, 108, 0.15));
+            border-color: rgba(196, 154, 108, 0.5);
+        }
+
+        /* PDF button — override bg-blue-600 */
+        #resultsArea button.bg-blue-600 {
+            background: linear-gradient(135deg, #c49a6c, #a67c52);
+            color: #0a1a1f;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        #resultsArea button.bg-blue-600:hover,
+        #resultsArea button.hover\:bg-blue-700:hover {
+            background: linear-gradient(135deg, #d4a574, #b8895e);
+            box-shadow: 0 4px 16px rgba(196, 154, 108, 0.25);
+        }
+
+        /* Chart button — override bg-green-600 */
+        #resultsArea button.bg-green-600 {
+            background: linear-gradient(135deg, rgba(40, 160, 140, 0.7), rgba(30, 120, 110, 0.7));
+            color: #e0f0ed;
+            border: 1px solid rgba(40, 160, 140, 0.3);
+            transition: all 0.3s ease;
+        }
+        #resultsArea button.bg-green-600:hover,
+        #resultsArea button.hover\:bg-green-700:hover {
+            background: linear-gradient(135deg, rgba(50, 180, 155, 0.8), rgba(40, 140, 120, 0.8));
+            box-shadow: 0 4px 16px rgba(40, 160, 140, 0.2);
+        }
+
+        /* --- Chart.js container --- */
+        #resultsArea canvas {
+            border-radius: 0.5rem;
+        }
+
+        /* Cycle info text — keep green/red/gray readable on dark bg */
+        /* The JS uses text-green-600, text-red-600, text-gray-600 — keep them as is,
+           they are Tailwind classes and readable on dark. text-gray-600 is a bit dim though. */
+        #resultsArea .text-gray-600 {
+            color: #9ca3af;
+        }
+
+        /* Error messages — keep red visible */
+        #resultsArea .text-red-500 {
+            color: #f87171;
+        }
+
+        /* ============================================= */
+
+        /* Nav back link */
+        .nav-back-link {
+            color: #d4a574;
+            transition: color 0.2s ease;
+        }
+        .nav-back-link:hover {
+            color: #e8c9a0;
+        }
+
+        /* Custom styled input */
+        .calc-input {
+            background: rgba(10, 30, 40, 0.6);
+            border: 1px solid rgba(196, 154, 108, 0.25);
+            color: #e8ddd0;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .calc-input::placeholder {
+            color: rgba(196, 180, 160, 0.4);
+        }
+        .calc-input:focus {
+            outline: none;
+            border-color: rgba(196, 154, 108, 0.6);
+            box-shadow: 0 0 0 3px rgba(196, 154, 108, 0.15);
+        }
+
+        /* Calculate button */
+        .calc-btn {
+            background: linear-gradient(135deg, #c49a6c, #a67c52);
+            color: #0a1a1f;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        .calc-btn:hover {
+            background: linear-gradient(135deg, #d4a574, #b8895e);
+            box-shadow: 0 4px 20px rgba(196, 154, 108, 0.3);
+            transform: scale(1.03);
+        }
+        .calc-btn:active {
+            transform: scale(0.98);
+        }
+        .calc-btn:focus-visible {
+            outline: 2px solid rgba(196, 154, 108, 0.8);
+            outline-offset: 2px;
+        }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="text-gray-100">
 
-    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-4xl">
-        <!-- Link powrotu do strony głównej -->
-        <div class="mb-4 text-center">
-            <a href="index.html" class="text-blue-600 hover:text-blue-800 font-medium">
-                &larr; Powrót do strony głównej
+    <!-- Subtle background radials -->
+    <div class="bg-pattern"></div>
+
+    <div class="relative z-10 container mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-10 max-w-5xl min-h-screen flex flex-col">
+
+        <!-- Navigation bar -->
+        <nav class="flex items-center justify-between mb-6 animate-fade-in delay-1">
+            <a href="index.html" class="nav-back-link flex items-center gap-2 font-medium text-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                Powrót
             </a>
-        </div>
+            <a href="index.html" class="nav-back-link font-cinzel text-sm tracking-wider opacity-60 hover:opacity-90">Numerologia</a>
+        </nav>
 
-        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+        <!-- Main content card -->
+        <div class="glass-card p-6 sm:p-8 flex-1 animate-fade-in delay-2">
 
-            <!-- Nagłówek -->
-            <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-6">Kalkulator Numerologiczny</h1>
+            <!-- Page heading -->
+            <h1 class="font-cinzel title-gradient text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2 tracking-wide">
+                Kalkulator Numerologiczny
+            </h1>
+            <div class="copper-divider max-w-xs mx-auto mt-3 mb-8"></div>
 
-            <!-- Sekcja wejściowa -->
+            <!-- Input section -->
             <div class="flex flex-col sm:flex-row items-center gap-4 mb-6">
                 <label for="nameInput" class="text-lg font-medium whitespace-nowrap"></label>
-                <input type="text" id="nameInput" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="np. Jan Dawid Kowalski">
+                <input type="text" id="nameInput" class="calc-input w-full px-4 py-3 rounded-lg text-base" placeholder="np. Jan Dawid Kowalski">
             </div>
 
-            <!-- Przycisk Oblicz -->
+            <!-- Calculate button -->
             <div class="text-center mb-8">
-                <button id="calculateBtn" class="bg-blue-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-transform transform hover:scale-105">
+                <button id="calculateBtn" class="calc-btn py-2.5 px-10 rounded-lg text-base">
                     Oblicz
                 </button>
             </div>
 
-            <!-- Obszar wyników -->
+            <!-- Results area — ID must remain exactly 'resultsArea' -->
             <div id="resultsArea" class="space-y-8">
                 <!-- Wyniki będą dynamicznie wstawiane tutaj -->
             </div>
 
         </div>
+
+        <!-- Footer -->
+        <footer class="mt-10 sm:mt-14 animate-fade-in delay-3">
+            <div class="copper-divider max-w-xs mx-auto mb-6"></div>
+            <div class="text-center">
+                <img src="sth-logo.png" alt="STH Logo" class="mx-auto h-12 opacity-60 hover:opacity-80 transition-opacity duration-300">
+            </div>
+        </footer>
+
     </div>
 
     <script>
